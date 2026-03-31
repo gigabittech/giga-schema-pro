@@ -52,31 +52,43 @@ if ( ! class_exists( 'Giga_SP_Detector' ) ) {
 				return $buffer;
 			}
 
-			$matches = [];
-			// Extract all existing JSON-LD
-			preg_match_all( '/<script type="application\/ld\+json">(.*?)<\/script>/is', $buffer, $matches );
+			// Performance: Try to get cached detection results
+			$post_id = get_queried_object_id();
+			$cache_key = 'giga_sp_detected_types_' . $post_id;
+			$cached_types = get_transient( $cache_key );
 
-			foreach ( $matches[1] as $json_string ) {
-				$data = json_decode( trim( $json_string ), true );
-				if ( isset( $data['@type'] ) ) {
-					if ( is_array( $data['@type'] ) ) {
-						self::$detected_types = array_merge( self::$detected_types, $data['@type'] );
-					} else {
-						self::$detected_types[] = $data['@type'];
+			if ( false !== $cached_types ) {
+				self::$detected_types = $cached_types;
+			} else {
+				$matches = [];
+				// Extract all existing JSON-LD
+				preg_match_all( '/<script type="application\/ld\+json">(.*?)<\/script>/is', $buffer, $matches );
+
+				foreach ( $matches[1] as $json_string ) {
+					$data = json_decode( trim( $json_string ), true );
+					if ( isset( $data['@type'] ) ) {
+						if ( is_array( $data['@type'] ) ) {
+							self::$detected_types = array_merge( self::$detected_types, $data['@type'] );
+						} else {
+							self::$detected_types[] = $data['@type'];
+						}
 					}
-				}
-				// Look through graphs Yoast likes to use
-				if ( isset( $data['@graph'] ) && is_array( $data['@graph'] ) ) {
-					foreach ( $data['@graph'] as $node ) {
-						if ( isset( $node['@type'] ) ) {
-							self::$detected_types[] = $node['@type'];
+					// Look through graphs Yoast likes to use
+					if ( isset( $data['@graph'] ) && is_array( $data['@graph'] ) ) {
+						foreach ( $data['@graph'] as $node ) {
+							if ( isset( $node['@type'] ) ) {
+								self::$detected_types[] = $node['@type'];
+							}
 						}
 					}
 				}
+
+				self::$detected_types = array_unique( self::$detected_types );
+
+				// Cache detection results for 1 hour (3600 seconds)
+				set_transient( $cache_key, self::$detected_types, HOUR_IN_SECONDS );
 			}
 
-			self::$detected_types = array_unique( self::$detected_types );
-			
 			// Get instance and safety check
 			$output_instance = Giga_SP_Output::get_instance();
 			$schemas_to_render = $output_instance->get_schemas_to_render();
@@ -91,11 +103,14 @@ if ( ! class_exists( 'Giga_SP_Detector' ) ) {
 			}
 
 			// Pro custom JSON-LD Support
-			$post_id = get_queried_object_id();
 			if ( $post_id && class_exists( 'Giga_SP_License' ) && Giga_SP_License::is_pro() ) {
 				$custom_json = get_post_meta( $post_id, '_giga_sp_custom_json', true );
 				if ( ! empty( $custom_json ) ) {
-					$our_json_ld .= "\n" . '<script type="application/ld+json" id="giga-sp-custom">' . $custom_json . '</script>' . "\n";
+					// Security: Validate JSON structure before outputting
+					json_decode( $custom_json );
+					if ( json_last_error() === JSON_ERROR_NONE ) {
+						$our_json_ld .= "\n" . '<script type="application/ld+json" id="giga-sp-custom">' . $custom_json . '</script>' . "\n";
+					}
 				}
 			}
 

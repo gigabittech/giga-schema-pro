@@ -28,9 +28,11 @@ if ( ! class_exists( 'Giga_SP_Core' ) ) {
 			require_once GIGA_SP_PATH . 'includes/class-giga-sp-woocommerce.php';
 			require_once GIGA_SP_PATH . 'includes/class-giga-sp-validator.php';
 			require_once GIGA_SP_PATH . 'includes/class-giga-sp-license.php';
-			
+
 			if ( is_admin() ) {
 				require_once GIGA_SP_PATH . 'includes/class-giga-sp-admin.php';
+				// Instantiate admin class
+				new Giga_SP_Admin();
 			}
 
 			// Base schema class
@@ -49,6 +51,7 @@ if ( ! class_exists( 'Giga_SP_Core' ) ) {
 		}
 
 		public function activate() {
+			// Create default rules if none exist
 			$rules = get_option( 'giga_sp_rules', false );
 			if ( ! $rules ) {
 				$default_rules = [
@@ -62,11 +65,11 @@ if ( ! class_exists( 'Giga_SP_Core' ) ) {
 				update_option( 'giga_sp_rules', $default_rules );
 			}
 			update_option( 'giga_sp_version', GIGA_SP_VERSION );
-			flush_rewrite_rules();
+			// Note: No flush_rewrite_rules() needed as plugin doesn't use custom rewrite rules
 		}
 
 		public function deactivate() {
-			flush_rewrite_rules();
+			// Note: No flush_rewrite_rules() needed as plugin doesn't use custom rewrite rules
 		}
 	}
 }

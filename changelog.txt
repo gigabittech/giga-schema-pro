@@ -1,0 +1,121 @@
+=== Giga Schema Pro ===
+
+== Changelog ==
+
+= 1.0.0 - 2026-03-31 =
+* Initial release
+* **Core Features:**
+  - Auto-generation engine with rule-based schema generation
+  - "Works alongside" architecture to avoid conflicts with SEO plugins
+  - Zero frontend assets for optimal performance
+  - Output buffering with caching for minimal performance impact
+* **Free Schema Types (10):**
+  - Article schema for blog posts
+  - WebPage schema for standard pages
+  - Product (basic) schema for WooCommerce
+  - BreadcrumbList schema with WooCommerce category hierarchy
+  - Organization schema with social profiles
+  - Person schema for author profiles
+  - WebSite schema with SearchAction
+  - FAQ schema with content extraction
+  - HowTo schema with step extraction
+  - LocalBusiness schema with address, hours, phone
+* **Pro Schema Types (25+):**
+  - Product (deep) with GTIN, MPN, brand, shippingDetails, returnPolicy
+  - ProductGroup for variable products
+  - Review and AggregateRating schemas
+  - Offer schema with conditions
+  - Event, Course, Recipe, VideoObject schemas
+  - SoftwareApplication, Book, JobPosting schemas
+  - Service, MedicalCondition, RealEstateListing schemas
+  - CollectionPage, ItemList, SpeakableSpecification schemas
+  - Custom JSON-LD for manual schema insertion
+* **WooCommerce Integration:**
+  - Deep Product schema with all Google-required fields
+  - Custom field mapping for GTIN, MPN, Brand
+  - Shipping details configuration
+  - Return policy configuration
+  - AggregateRating from WooCommerce reviews
+  - ProductGroup for variable products
+* **Validation:**
+  - Per-page validation with Google Rich Results Test API
+  - Bulk validation for posts, pages, products
+  - Schema structure validation
+  - Error reporting with fix suggestions
+  - Validation caching for 7 days
+* **Admin Interface:**
+  - Dashboard with SEO plugin detection
+  - Rules management with priority and conditions
+  - Schema types browser with descriptions
+  - WooCommerce settings page
+  - Settings page for organization info
+  - Validation dashboard with bulk runner
+  - Per-page meta box for schema overrides
+  - Custom JSON-LD editor (Pro)
+* **Security:**
+  - All inputs sanitized
+  - JSON validation before saving
+  - Nonce verification on all forms
+  - Capability checks
+  - SQL injection prevention with prepared statements
+  - XSS prevention with proper escaping
+* **Performance:**
+  - Zero frontend CSS/JS
+  - Output buffering caching (1 hour)
+  - Validation result caching (7 days)
+  - No unnecessary rewrite rule flushes
+  - Assets only loaded on admin pages
+* **WordPress Best Practices:**
+  - Proper file structure
+  - Consistent naming conventions
+  - Text domain for internationalization
+  - Activation/deactivation hooks
+  - Clean uninstall with data removal
+  - GPL v2+ license
+  - WordPress coding standards compliance
+
+== Upgrade Path ==
+
+= From Free to Pro =
+1. Purchase Pro license from https://gigaverse.com/products/giga-schema-pro/
+2. Enter license key in Giga Schema → Settings
+3. All Pro features unlock immediately
+4. No data migration needed
+
+== Known Issues ==
+
+None reported.
+
+== Future Roadmap ==
+
+= v1.1 (Month 2) =
+* Bulk validation with progress tracking
+* Schema field mapping for WooCommerce custom fields
+* WooCommerce review schema with auto-calculation
+* Gutenberg blocks for FAQ/HowTo schema
+* Shortcode support for page builders
+
+= v1.2 (Month 4) =
+* Schema templates for reuse
+* Import schema from competitor URL
+* Carousel schema for category pages (ItemList)
+* Video schema auto-detection from YouTube/Vimeo
+* Multi-language schema support (WPML/Polylang)
+
+= v2.0 (Month 6+) =
+* Agency/multi-site license ($99/year)
+* REST API for headless WordPress
+* Schema monitoring with weekly automated validation
+* AI-powered schema suggestions
+* Google Search Console integration
+
+== Support ==
+
+* Documentation: https://gigaverse.com/docs/giga-schema-pro/
+* Support: https://gigaverse.com/support/
+* GitHub: https://github.com/giga-schema-pro/giga-schema-pro/issues
+
+== Credits ==
+
+Developed by the Gigaverse team.
+Built following WordPress Plugin Best Practices.

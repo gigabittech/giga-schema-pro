@@ -19,10 +19,16 @@ foreach ( $giga_sp_options_to_delete as $option ) {
 	delete_option( $option );
 }
 
+// Delete all post meta using WordPress API (best practice)
+delete_post_meta_by_key( '_giga_sp_disabled_types' );
+delete_post_meta_by_key( '_giga_sp_custom_json' );
+
+// Delete all transients using WordPress API (best practice)
 global $wpdb;
-
-// Delete all post meta
-$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN ('_giga_sp_disabled_types', '_giga_sp_custom_json')" );
-
-// Delete all transients
-$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_giga_sp_validation_%' OR option_name LIKE '_transient_timeout_giga_sp_validation_%'" );
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+		'_transient_giga_sp_validation_%',
+		'_transient_timeout_giga_sp_validation_%'
+	)
+);
