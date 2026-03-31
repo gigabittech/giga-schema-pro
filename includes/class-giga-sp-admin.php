@@ -125,38 +125,12 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 					</div>
 
 					<!-- Modern Navigation Tabs -->
-					<div class="giga-sp-tabs">
-						<a href="#dashboard" class="giga-sp-tab active" onclick="return false;">
-							<span class="dashicons dashicons-dashboard"></span>
-							<?php esc_html_e( 'Dashboard', 'giga-schema-pro' ); ?>
-						</a>
-						<a href="#rules" class="giga-sp-tab" onclick="window.location.href='?page=giga-schema-pro-rules'; return false;">
-							<span class="dashicons dashicons-list-view"></span>
-							<?php esc_html_e( 'Rules', 'giga-schema-pro' ); ?>
-						</a>
-						<a href="#types" class="giga-sp-tab" onclick="window.location.href='?page=giga-schema-pro-types'; return false;">
-							<span class="dashicons dashicons-category"></span>
-							<?php esc_html_e( 'Schema Types', 'giga-schema-pro' ); ?>
-						</a>
-						<a href="#woocommerce" class="giga-sp-tab" onclick="window.location.href='?page=giga-schema-pro-woo'; return false;">
-							<span class="dashicons dashicons-cart"></span>
-							<?php esc_html_e( 'WooCommerce', 'giga-schema-pro' ); ?>
-						</a>
-						<a href="#validation" class="giga-sp-tab" onclick="window.location.href='?page=giga-schema-pro-validation'; return false;">
-							<span class="dashicons dashicons-yes-alt"></span>
-							<?php esc_html_e( 'Validation', 'giga-schema-pro' ); ?>
-						</a>
-					</div>
+				
 
 					<!-- SEO Plugin Detection Notice -->
 					<?php if ( ! empty( $plugins ) ) : ?>
 						<div class="giga-card giga-card-notice">
-							<div class="giga-card-header">
-								<h3 class="giga-card-title">
-									<span class="dashicons dashicons-info"></span>
-									<?php esc_html_e( 'SEO Plugin Integration', 'giga-schema-pro' ); ?>
-								</h3>
-							</div>
+							
 							<div class="giga-card-body">
 								<p>
 									<strong><?php esc_html_e( 'Detected:', 'giga-schema-pro' ); ?></strong>
@@ -234,55 +208,46 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 							</div>
 							<div class="giga-card-body">
 								<div class="giga-checklist">
-									<div class="giga-check-item <?php echo $org_set ? 'completed' : ''; ?>">
-										<div class="giga-check-icon"></div>
-										<div class="giga-check-content">
-											<div class="giga-check-title"><?php esc_html_e( 'Configure Organization Info', 'giga-schema-pro' ); ?></div>
-											<div class="giga-check-description"><?php esc_html_e( 'Set your site name, logo, and social profiles', 'giga-schema-pro' ); ?></div>
-										</div>
-										<?php if ( $org_set ) : ?>
-											<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
+										<a href="?page=giga-schema-pro-settings" class="giga-check-item <?php echo $org_set ? 'completed' : ''; ?>">
+											<div class="giga-check-icon"></div>
+											<div class="giga-check-content">
+												<div class="giga-check-title"><?php esc_html_e( 'Configure Organization Info', 'giga-schema-pro' ); ?></div>
+												<div class="giga-check-description"><?php esc_html_e( 'Set your site name, logo, and social profiles', 'giga-schema-pro' ); ?></div>
+											</div>
+											<?php if ( $org_set ) : ?>
+												<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
+											<?php endif; ?>
+										</a>
+										
+										<?php if ( $woo_active ) : ?>
+											<a href="?page=giga-schema-pro-woo" class="giga-check-item <?php echo $woo_set ? 'completed' : ''; ?>">
+												<div class="giga-check-icon"></div>
+												<div class="giga-check-content">
+													<div class="giga-check-title"><?php esc_html_e( 'Configure WooCommerce Settings', 'giga-schema-pro' ); ?></div>
+													<div class="giga-check-description"><?php esc_html_e( 'Set default brand, shipping rates, and return policies', 'giga-schema-pro' ); ?></div>
+												</div>
+												<?php if ( $woo_set ) : ?>
+													<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
+												<?php endif; ?>
+											</a>
 										<?php endif; ?>
+										
+										
+										<a href="?page=giga-schema-pro-rules" class="giga-check-item <?php echo $analytics['rules_active'] > 0 ? 'completed' : ''; ?>">
+											<div class="giga-check-icon"></div>
+											<div class="giga-check-content">
+												<div class="giga-check-title"><?php esc_html_e( 'Create Auto-Generation Rules', 'giga-schema-pro' ); ?></div>
+												<div class="giga-check-description"><?php esc_html_e( 'Set rules to automatically apply schema to content', 'giga-schema-pro' ); ?></div>
+											</div>
+											<?php if ( $analytics['rules_active'] > 0 ) : ?>
+												<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
+											<?php endif; ?>
+										</a>
 									</div>
-									
-									<div class="giga-check-item <?php echo $woo_active && $woo_set ? 'completed' : ''; ?>">
-										<div class="giga-check-icon"></div>
-										<div class="giga-check-content">
-											<div class="giga-check-title"><?php esc_html_e( 'Configure WooCommerce Settings', 'giga-schema-pro' ); ?></div>
-											<div class="giga-check-description"><?php esc_html_e( 'Set default brand, shipping rates, and return policies', 'giga-schema-pro' ); ?></div>
-										</div>
-										<?php if ( $woo_active && $woo_set ) : ?>
-											<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
-										<?php endif; ?>
-									</div>
-									
-									<div class="giga-check-item <?php echo ! empty( $plugins ) ? 'completed' : ''; ?>">
-										<div class="giga-check-icon"></div>
-										<div class="giga-check-content">
-											<div class="giga-check-title"><?php esc_html_e( 'SEO Plugin Integration', 'giga-schema-pro' ); ?></div>
-											<div class="giga-check-description"><?php esc_html_e( 'Detected and working with existing SEO plugins', 'giga-schema-pro' ); ?></div>
-										</div>
-										<?php if ( ! empty( $plugins ) ) : ?>
-											<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
-										<?php endif; ?>
-									</div>
-									
-									<div class="giga-check-item <?php echo $analytics['rules_active'] > 0 ? 'completed' : ''; ?>">
-										<div class="giga-check-icon"></div>
-										<div class="giga-check-content">
-											<div class="giga-check-title"><?php esc_html_e( 'Create Auto-Generation Rules', 'giga-schema-pro' ); ?></div>
-											<div class="giga-check-description"><?php esc_html_e( 'Set rules to automatically apply schema to content', 'giga-schema-pro' ); ?></div>
-										</div>
-										<?php if ( $analytics['rules_active'] > 0 ) : ?>
-											<span class="giga-sp-badge giga-sp-pass">✓ Done</span>
-										<?php endif; ?>
-									</div>
-								</div>
 								
 								<?php if ( ! $org_set || ! ( $woo_active && $woo_set ) || $analytics['rules_active'] === 0 ) : ?>
 									<div class="giga-card-footer">
 										<a href="#" class="giga-btn giga-btn-primary" onclick="window.location.href='?page=giga-schema-pro-settings'; return false;">
-											<span class="dashicons dashicons-cog"></span>
 											<?php esc_html_e( 'Complete Setup', 'giga-schema-pro' ); ?>
 										</a>
 									</div>

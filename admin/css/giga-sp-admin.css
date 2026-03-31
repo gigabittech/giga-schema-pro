@@ -59,6 +59,7 @@
 .giga-sp-badge {
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 4px;
 	font-size: 11px;
 	font-weight: 600;
@@ -421,11 +422,11 @@
 
 .giga-card-footer {
 	padding: 16px 24px;
-	background: var(--giga-gray-50);
+
 	border-top: 1px solid var(--giga-gray-200);
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: center;
 }
 
 /* ----------------------------------------------------------
@@ -1001,6 +1002,7 @@
 	transition: all 0.2s ease;
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 8px;
 	text-decoration: none;
 }
@@ -1013,6 +1015,7 @@
 
 .giga-btn-primary:hover {
 	background: var(--giga-primary-dark);
+	color: white;
 	transform: translateY(-1px);
 	box-shadow: var(--giga-shadow-md);
 }
@@ -1064,11 +1067,21 @@
 	border-radius: var(--giga-radius);
 	margin-bottom: 12px;
 	transition: all 0.2s ease;
+	text-decoration: none;
+	color: inherit;
 }
 
 .giga-check-item:hover {
-	border-color: var(--giga-primary);
-	box-shadow: var(--giga-shadow);
+	transform: translateY(-1px);
+}
+
+.giga-check-item:focus {
+	outline: 2px solid var(--giga-primary);
+	outline-offset: 2px;
+}
+
+.giga-check-item:active {
+	transform: translateY(0);
 }
 
 .giga-check-item:last-child {
