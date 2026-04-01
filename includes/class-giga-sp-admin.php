@@ -1552,10 +1552,7 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 	
 							<div class="giga-form-actions">
 								<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_woo_save' ); ?>
-								<button type="button" class="giga-btn giga-btn-secondary" onclick="window.location.reload();">
-									<span class="dashicons dashicons-image-rotate"></span>
-									<?php esc_html_e( 'Reset', 'giga-schema-pro' ); ?>
-								</button>
+								
 							</div>
 						</form>
 					</div>
@@ -1988,10 +1985,6 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 
 					<div class="giga-form-actions">
 						<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_settings_save' ); ?>
-						<button type="button" class="giga-btn-secondary giga-reset-settings">
-							<span class="dashicons dashicons-image-rotate"></span>
-							<?php esc_html_e( 'Reset to Defaults', 'giga-schema-pro' ); ?>
-						</button>
 					</div>
 				</form>
 			</div>

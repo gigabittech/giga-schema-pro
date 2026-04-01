@@ -1024,10 +1024,21 @@
 	background: var(--giga-gray-100);
 	color: var(--giga-gray-700);
 	border: 1px solid var(--giga-gray-300);
+	padding: 10px 20px;
+	border-radius: var(--giga-radius);
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .giga-btn-secondary:hover {
 	background: var(--giga-gray-200);
+	transform: translateY(-1px);
+	box-shadow: var(--giga-shadow-md);
 }
 
 .giga-btn-success {
@@ -2106,11 +2117,38 @@
 /* Form Actions */
 .giga-form-actions {
 	display: flex;
-	gap: 12px;
-	justify-content: flex-end;
+	gap: 16px;
+	justify-content: center;
 	margin-top: 32px;
 	padding-top: 24px;
 	border-top: 1px solid var(--giga-gray-200);
+}
+
+.giga-form-actions .giga-btn {
+	min-width: 160px;
+}
+
+/* Make Reset Buttons Match Save Button Styling Exactly */
+.giga-reset-settings {
+	min-width: 160px;
+	background: var(--giga-primary);
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: var(--giga-radius);
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.giga-reset-settings:hover {
+	background: var(--giga-primary-dark);
+	transform: translateY(-1px);
+	box-shadow: var(--giga-shadow-md);
 }
 
 /* Info Card */
@@ -2807,6 +2845,7 @@
 	}
 	
 	.giga-validation-actions .giga-btn {
+		min-width: 160px;
 		width: 100%;
 	}
 }
