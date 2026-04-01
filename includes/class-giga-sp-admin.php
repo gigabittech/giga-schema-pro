@@ -340,46 +340,7 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 						</div>
 
 						<!-- Recent Activity Card -->
-						<div class="giga-card">
-							<div class="giga-card-header">
-								<h3 class="giga-card-title">
-									<span class="dashicons dashicons-clock"></span>
-									<?php esc_html_e( 'Recent Activity', 'giga-schema-pro' ); ?>
-								</h3>
-							</div>
-							<div class="giga-card-body">
-								<div class="giga-activity-list">
-									<?php if ( ! empty( $analytics['recent_activity'] ) ) : ?>
-										<?php foreach ( $analytics['recent_activity'] as $activity ) : ?>
-											<div class="giga-activity-item">
-												<div class="giga-activity-icon">
-													<span class="dashicons <?php echo esc_attr( $activity['icon'] ); ?>"></span>
-												</div>
-												<div class="giga-activity-content">
-													<div class="giga-activity-title"><?php echo esc_html( $activity['title'] ); ?></div>
-													<div class="giga-activity-time"><?php echo esc_html( $activity['time'] ); ?></div>
-												</div>
-												<?php if ( isset( $activity['status'] ) ) : ?>
-													<span class="giga-sp-badge <?php echo esc_attr( $activity['status'] ); ?>"><?php echo esc_html( $activity['status_text'] ); ?></span>
-												<?php endif; ?>
-											</div>
-										<?php endforeach; ?>
-									<?php else : ?>
-										<div class="giga-activity-empty">
-											<?php esc_html_e( 'No recent activity. Start by validating your schema!', 'giga-schema-pro' ); ?>
-										</div>
-									<?php endif; ?>
-								</div>
-								
-								<div class="giga-card-footer">
-									<a href="#" class="giga-btn giga-btn-secondary" onclick="window.location.href='?page=giga-schema-pro-validation'; return false;">
-										<span class="dashicons dashicons-visibility"></span>
-										<?php esc_html_e( 'View All Activity', 'giga-schema-pro' ); ?>
-									</a>
-								</div>
-							</div>
-						</div>
-
+						
 					</div>
 
 				</div>
@@ -1061,41 +1022,310 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				return;
 			}
-
+	
 			$is_pro = class_exists( 'Giga_SP_License' ) && Giga_SP_License::is_pro();
+			$woo_active = class_exists( 'WooCommerce' );
+			
+			// Get validation results if available
+			$validation_results = get_option( 'giga_sp_validation_results', [] );
+			$has_results = !empty($validation_results) && isset($validation_results['timestamp']);
+			
+			// Get schema statistics
+			$stats = $this->get_validation_stats();
 			?>
-			<div class="wrap">
-				<h1><?php esc_html_e( 'Schema Validation', 'giga-schema-pro' ); ?></h1>
-				<p><?php esc_html_e( 'Validate your schema markup against Google Rich Results Test requirements.', 'giga-schema-pro' ); ?></p>
-
-				<?php if ( $is_pro ) : ?>
-					<div class="card">
-						<h2><?php esc_html_e( 'Bulk Validation', 'giga-schema-pro' ); ?></h2>
-						<p><?php esc_html_e( 'Validate all posts, pages, or products at once.', 'giga-schema-pro' ); ?></p>
-						<select id="giga-sp-bulk-validate-type" class="regular-text">
-							<option value="post"><?php esc_html_e( 'Posts', 'giga-schema-pro' ); ?></option>
-							<option value="page"><?php esc_html_e( 'Pages', 'giga-schema-pro' ); ?></option>
-							<?php if ( class_exists( 'WooCommerce' ) ) : ?>
-								<option value="product"><?php esc_html_e( 'Products', 'giga-schema-pro' ); ?></option>
-							<?php endif; ?>
-						</select>
-						<button type="button" class="button button-primary" id="giga-sp-bulk-validate"><?php esc_html_e( 'Start Validation', 'giga-schema-pro' ); ?></button>
-						<span id="giga-sp-bulk-progress"></span>
-					</div>
-
-					<div class="card">
-						<h2><?php esc_html_e( 'Validation Report', 'giga-schema-pro' ); ?></h2>
-						<div id="giga-sp-validation-results">
-							<p><?php esc_html_e( 'Run bulk validation to see results here.', 'giga-schema-pro' ); ?></p>
+			<div class="giga-sp-admin">
+				<div class="giga-sp-container">
+					
+					<!-- Modern Header -->
+					<div class="giga-sp-dashboard-header">
+						<div class="giga-sp-dashboard-content">
+							<div class="giga-sp-header-main">
+								<div class="giga-sp-header-left">
+									<div class="giga-sp-header-icon">
+										<span class="dashicons dashicons-search"></span>
+									</div>
+									<div class="giga-sp-header-title">
+										<h1><?php esc_html_e( 'Schema Validation', 'giga-schema-pro' ); ?></h1>
+										<p class="giga-sp-header-subtitle"><?php esc_html_e( 'Test your schema markup against Google Rich Results requirements', 'giga-schema-pro' ); ?></p>
+									</div>
+								</div>
+								<div class="giga-sp-header-actions">
+									<a href="#" class="giga-btn giga-btn-secondary" onclick="window.location.href='?page=giga-schema-pro'; return false;">
+										<span class="dashicons dashicons-arrow-left"></span>
+										<?php esc_html_e( 'Back to Dashboard', 'giga-schema-pro' ); ?>
+									</a>
+								</div>
+							</div>
 						</div>
 					</div>
-				<?php else : ?>
-					<div class="card">
-						<h2><?php esc_html_e( 'Pro Feature', 'giga-schema-pro' ); ?></h2>
-						<p><?php esc_html_e( 'Schema validation is a Pro feature. Upgrade to validate your schema markup against Google Rich Results Test.', 'giga-schema-pro' ); ?></p>
-						<a href="#" class="button button-primary"><?php esc_html_e( 'Upgrade to Pro', 'giga-schema-pro' ); ?></a>
+	
+					<!-- Validation Stats Overview -->
+					<div class="giga-stats-grid">
+						<?php if ($woo_active) : ?>
+						<div class="giga-stat-card">
+							<div class="giga-stat-header">
+								<div class="giga-stat-icon" style="background: #10b981; color: white;">🛒</div>
+								<div class="giga-stat-content">
+									<h3><?php echo esc_html( $stats['products'] ); ?></h3>
+									<p><?php esc_html_e( 'Products', 'giga-schema-pro' ); ?></p>
+								</div>
+							</div>
+						</div>
+						<?php endif; ?>
+						
+						<div class="giga-stat-card">
+							<div class="giga-stat-header">
+								<div class="giga-stat-icon" style="background: #3b82f6; color: white;">✓</div>
+								<div class="giga-stat-content">
+									<h3><?php echo esc_html( $stats['validated'] ); ?></h3>
+									<p><?php esc_html_e( 'Validated', 'giga-schema-pro' ); ?></p>
+								</div>
+							</div>
+						</div>
+						
+						<div class="giga-stat-card">
+							<div class="giga-stat-header">
+								<div class="giga-stat-icon" style="background: #f59e0b; color: white;">⚠</div>
+								<div class="giga-stat-content">
+									<h3><?php echo esc_html( $stats['warnings'] ); ?></h3>
+									<p><?php esc_html_e( 'Warnings', 'giga-schema-pro' ); ?></p>
+								</div>
+							</div>
+						</div>
+						
+						<div class="giga-stat-card">
+							<div class="giga-stat-header">
+								<div class="giga-stat-icon" style="background: #ef4444; color: white;">✕</div>
+								<div class="giga-stat-content">
+									<h3><?php echo esc_html( $stats['errors'] ); ?></h3>
+									<p><?php esc_html_e( 'Errors', 'giga-schema-pro' ); ?></p>
+								</div>
+							</div>
+						</div>
 					</div>
-				<?php endif; ?>
+	
+					<?php if ( $is_pro ) : ?>
+						
+						<!-- Quick Validation Actions -->
+						<div class="giga-card">
+							<div class="giga-card-header">
+								<h3 class="giga-card-title">
+									<span class="dashicons dashicons-rocket"></span>
+									<?php esc_html_e( 'Quick Validation Actions', 'giga-schema-pro' ); ?>
+								</h3>
+							</div>
+							<div class="giga-card-body">
+								<div class="giga-validation-actions">
+									<?php if ($woo_active) : ?>
+									<button type="button" class="giga-btn giga-btn-primary" id="giga-validate-woo-products">
+										<span class="dashicons dashicons-cart"></span>
+										<?php esc_html_e( 'Validate All Products', 'giga-schema-pro' ); ?>
+									</button>
+									<?php endif; ?>
+									
+									<button type="button" class="giga-btn giga-btn-primary" id="giga-validate-current-page">
+										<span class="dashicons dashicons-screen"></span>
+										<?php esc_html_e( 'Validate Current Page', 'giga-schema-pro' ); ?>
+									</button>
+									
+									<button type="button" class="giga-btn giga-btn-secondary" id="giga-validate-selected">
+										<span class="dashicons dashicons-list-check"></span>
+										<?php esc_html_e( 'Validate Selected', 'giga-schema-pro' ); ?>
+									</button>
+								</div>
+							</div>
+						</div>
+	
+						<!-- Validation Filters -->
+						<div class="giga-card">
+							<div class="giga-card-header">
+								<h3 class="giga-card-title">
+									<span class="dashicons dashicons-filter"></span>
+									<?php esc_html_e( 'Validation Filters', 'giga-schema-pro' ); ?>
+								</h3>
+							</div>
+							<div class="giga-card-body">
+								<div class="giga-filters-grid">
+									<div class="giga-filter-group">
+										<label><?php esc_html_e( 'Content Type', 'giga-schema-pro' ); ?></label>
+										<select id="validation-content-type" class="giga-form-select">
+											<option value="all"><?php esc_html_e( 'All Content', 'giga-schema-pro' ); ?></option>
+											<option value="post"><?php esc_html_e( 'Posts', 'giga-schema-pro' ); ?></option>
+											<option value="page"><?php esc_html_e( 'Pages', 'giga-schema-pro' ); ?></option>
+											<?php if ($woo_active) : ?>
+												<option value="product"><?php esc_html_e( 'Products', 'giga-schema-pro' ); ?></option>
+											<?php endif; ?>
+										</select>
+									</div>
+									
+									<div class="giga-filter-group">
+										<label><?php esc_html_e( 'Status', 'giga-schema-pro' ); ?></label>
+										<select id="validation-status" class="giga-form-select">
+											<option value="all"><?php esc_html_e( 'All Status', 'giga-schema-pro' ); ?></option>
+											<option value="passed"><?php esc_html_e( 'Passed', 'giga-schema-pro' ); ?></option>
+											<option value="warning"><?php esc_html_e( 'Warnings', 'giga-schema-pro' ); ?></option>
+											<option value="error"><?php esc_html_e( 'Errors', 'giga-schema-pro' ); ?></option>
+										</select>
+									</div>
+									
+									<div class="giga-filter-group">
+										<label><?php esc_html_e( 'Date Range', 'giga-schema-pro' ); ?></label>
+										<select id="validation-date-range" class="giga-form-select">
+											<option value="all"><?php esc_html_e( 'All Time', 'giga-schema-pro' ); ?></option>
+											<option value="today"><?php esc_html_e( 'Today', 'giga-schema-pro' ); ?></option>
+											<option value="week"><?php esc_html_e( 'Last 7 Days', 'giga-schema-pro' ); ?></option>
+											<option value="month"><?php esc_html_e( 'Last 30 Days', 'giga-schema-pro' ); ?></option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+	
+						<!-- Bulk Validation -->
+						<div class="giga-card">
+							<div class="giga-card-header">
+								<h3 class="giga-card-title">
+									<span class="dashicons dashicons-tasks"></span>
+									<?php esc_html_e( 'Bulk Validation', 'giga-schema-pro' ); ?>
+								</h3>
+							</div>
+							<div class="giga-card-body">
+								<div class="giga-bulk-validation">
+									<div class="giga-validation-progress" id="giga-validation-progress" style="display: none;">
+										<div class="giga-progress-bar">
+											<div class="giga-progress-fill" style="width: 0%"></div>
+											<div class="giga-progress-text">0%</div>
+										</div>
+										<div class="giga-validation-stats">
+											<span id="giga-validation-current">0</span> / <span id="giga-validation-total">0</span> items
+										</div>
+									</div>
+									
+									<div class="giga-validation-options">
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" id="validate-schema-types" checked>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Validate Schema Types', 'giga-schema-pro' ); ?></span>
+											</label>
+										</div>
+										
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" id="validate-structure" checked>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Validate Structure', 'giga-schema-pro' ); ?></span>
+											</label>
+										</div>
+										
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" id="validate-rich-results" checked>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Validate for Rich Results', 'giga-schema-pro' ); ?></span>
+											</label>
+										</div>
+									</div>
+									
+									<div class="giga-form-actions">
+										<button type="button" class="giga-btn giga-btn-primary" id="giga-start-bulk-validation">
+											<span class="dashicons dashicons-play"></span>
+											<?php esc_html_e( 'Start Bulk Validation', 'giga-schema-pro' ); ?>
+										</button>
+										<button type="button" class="giga-btn giga-btn-secondary" id="giga-export-results">
+											<span class="dashicons dashicons-download"></span>
+											<?php esc_html_e( 'Export Results', 'giga-schema-pro' ); ?>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+	
+						<!-- Validation Results -->
+						<div class="giga-card">
+							<div class="giga-card-header">
+								<h3 class="giga-card-title">
+									<span class="dashicons dashicons-clipboard-list"></span>
+									<?php esc_html_e( 'Validation Results', 'giga-schema-pro' ); ?>
+								</h3>
+							</div>
+							<div class="giga-card-body">
+								<div id="giga-sp-validation-results">
+									<?php if ($has_results) : ?>
+										<?php $this->display_validation_results($validation_results); ?>
+									<?php else : ?>
+										<div class="giga-empty-state">
+											<div class="giga-empty-icon">
+												<span class="dashicons dashicons-search"></span>
+											</div>
+											<h3><?php esc_html_e( 'No validation results yet', 'giga-schema-pro' ); ?></h3>
+											<p><?php esc_html_e( 'Run a validation to see detailed results and recommendations for improving your schema markup.', 'giga-schema-pro' ); ?></p>
+											<button type="button" class="giga-btn giga-btn-primary" onclick="$('#giga-start-bulk-validation').click();">
+												<?php esc_html_e( 'Start Validation', 'giga-schema-pro' ); ?>
+											</button>
+										</div>
+									<?php endif; ?>
+								</div>
+							</div>
+						</div>
+	
+					<?php else : ?>
+						
+						<!-- Pro Feature Card -->
+						<div class="giga-card">
+							<div class="giga-card-header">
+								<h3 class="giga-card-title">
+									<span class="dashicons dashicons-lock"></span>
+									<?php esc_html_e( 'Pro Feature - Advanced Validation', 'giga-schema-pro' ); ?>
+								</h3>
+							</div>
+							<div class="giga-card-body">
+								<div class="giga-pro-features">
+									<div class="giga-pro-feature-list">
+										<div class="giga-pro-feature">
+											<span class="dashicons dashicons-check"></span>
+											<div>
+												<h4><?php esc_html_e( 'Bulk Product Validation', 'giga-schema-pro' ); ?></h4>
+												<p><?php esc_html_e( 'Validate all WooCommerce products at once with detailed reporting', 'giga-schema-pro' ); ?></p>
+											</div>
+										</div>
+										
+										<div class="giga-pro-feature">
+											<span class="dashicons dashicons-check"></span>
+											<div>
+												<h4><?php esc_html_e( 'Google Rich Results Test', 'giga-schema-pro' ); ?></h4>
+												<p><?php esc_html_e( 'Test against Google\'s latest Rich Results requirements', 'giga-schema-pro' ); ?></p>
+											</div>
+										</div>
+										
+										<div class="giga-pro-feature">
+											<span class="dashicons dashicons-check"></span>
+											<div>
+												<h4><?php esc_html_e( 'Auto-fix Suggestions', 'giga-schema-pro' ); ?></h4>
+												<p><?php esc_html_e( 'Get specific recommendations to fix schema issues', 'giga-schema-pro' ); ?></p>
+											</div>
+										</div>
+										
+										<div class="giga-pro-feature">
+											<span class="dashicons dashicons-check"></span>
+											<div>
+												<h4><?php esc_html_e( 'Export Validation Reports', 'giga-schema-pro' ); ?></h4>
+												<p><?php esc_html_e( 'Generate and download detailed validation reports', 'giga-schema-pro' ); ?></p>
+											</div>
+										</div>
+									</div>
+									
+									<div class="giga-upgrade-section">
+										<h3><?php esc_html_e( 'Upgrade to Pro', 'giga-schema-pro' ); ?></h3>
+										<p><?php esc_html_e( 'Unlock advanced validation features and improve your search visibility', 'giga-schema-pro' ); ?></p>
+										<a href="#" class="giga-btn giga-btn-primary">
+											<span class="dashicons dashicons-star-filled"></span>
+											<?php esc_html_e( 'Upgrade Now', 'giga-schema-pro' ); ?>
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+	
+					<?php endif; ?>
+				</div>
 			</div>
 			<?php
 		}
@@ -1109,7 +1339,7 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				return;
 			}
-
+	
 			// Save settings if form submitted
 			if ( isset( $_POST['giga_sp_woo_save'] ) && check_admin_referer( 'giga_sp_woo_settings' ) ) {
 				$settings = [
@@ -1131,7 +1361,7 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 				);
 				echo '<div class="notice notice-success"><p>' . esc_html__( 'Settings saved successfully.', 'giga-schema-pro' ) . '</p></div>';
 			}
-
+	
 			$settings = get_option( 'giga_sp_woocommerce_settings', [] );
 			$shipping_rate = isset( $settings['shippingRate'] ) ? $settings['shippingRate'] : '';
 			$shipping_currency = isset( $settings['shippingCurrency'] ) ? $settings['shippingCurrency'] : '';
@@ -1142,89 +1372,380 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 			$mpn_field = isset( $settings['mpnField'] ) ? $settings['mpnField'] : '_mpn';
 			$brand_field = isset( $settings['brandField'] ) ? $settings['brandField'] : '_brand';
 			?>
-			<div class="wrap">
-				<h1><?php esc_html_e( 'WooCommerce Schema Settings', 'giga-schema-pro' ); ?></h1>
-				<form method="post" action="">
-					<?php wp_nonce_field( 'giga_sp_woo_settings' ); ?>
-					<table class="form-table">
-						<tr>
-							<th scope="row">
-								<label for="shipping_rate"><?php esc_html_e( 'Default Shipping Rate', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="number" step="0.01" name="shipping_rate" id="shipping_rate" value="<?php echo esc_attr( $shipping_rate ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Default shipping cost for all products. Leave empty to disable shipping details in schema.', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="shipping_currency"><?php esc_html_e( 'Shipping Currency', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="text" name="shipping_currency" id="shipping_currency" value="<?php echo esc_attr( $shipping_currency ); ?>" class="regular-text" placeholder="USD">
-								<p class="description"><?php esc_html_e( 'Currency code for shipping (e.g., USD, EUR). Leave empty to use WooCommerce default.', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="return_days"><?php esc_html_e( 'Return Policy Days', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="number" name="return_days" id="return_days" value="<?php echo esc_attr( $return_days ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Number of days customers can return products.', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="return_policy_category"><?php esc_html_e( 'Return Policy Category', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<select name="return_policy_category" id="return_policy_category" class="regular-text">
-									<option value="https://schema.org/MerchantReturnFiniteReturnWindow" <?php selected( $return_policy_category, 'https://schema.org/MerchantReturnFiniteReturnWindow' ); ?>><?php esc_html_e( 'Finite Return Window', 'giga-schema-pro' ); ?></option>
-									<option value="https://schema.org/MerchantReturnUnlimitedWindow" <?php selected( $return_policy_category, 'https://schema.org/MerchantReturnUnlimitedWindow' ); ?>><?php esc_html_e( 'Unlimited Return Window', 'giga-schema-pro' ); ?></option>
-									<option value="https://schema.org/MerchantReturnNotPermitted" <?php selected( $return_policy_category, 'https://schema.org/MerchantReturnNotPermitted' ); ?>><?php esc_html_e( 'Returns Not Permitted', 'giga-schema-pro' ); ?></option>
-								</select>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="default_brand"><?php esc_html_e( 'Default Brand Name', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="text" name="default_brand" id="default_brand" value="<?php echo esc_attr( $default_brand ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Default brand name for products. Will be used if no product-specific brand is set.', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="gtin_field"><?php esc_html_e( 'GTIN Custom Field', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="text" name="gtin_field" id="gtin_field" value="<?php echo esc_attr( $gtin_field ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Custom field name for GTIN (Global Trade Item Number). Default: _gtin', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="mpn_field"><?php esc_html_e( 'MPN Custom Field', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="text" name="mpn_field" id="mpn_field" value="<?php echo esc_attr( $mpn_field ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Custom field name for MPN (Manufacturer Part Number). Default: _mpn', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="brand_field"><?php esc_html_e( 'Brand Custom Field', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="text" name="brand_field" id="brand_field" value="<?php echo esc_attr( $brand_field ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Custom field name for Brand. Default: _brand', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-					</table>
-					<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_woo_save' ); ?>
-				</form>
+			<div class="giga-sp-admin">
+				<div class="giga-sp-container">
+					
+					<!-- Modern Header -->
+					<div class="giga-sp-dashboard-header">
+						<div class="giga-sp-dashboard-content">
+							<div class="giga-sp-header-main">
+								<div class="giga-sp-header-left">
+									<div class="giga-sp-header-icon">
+										<span class="dashicons dashicons-cart"></span>
+									</div>
+									<div class="giga-sp-header-title">
+										<h1><?php esc_html_e( 'WooCommerce Schema Settings', 'giga-schema-pro' ); ?></h1>
+										<p class="giga-sp-header-subtitle"><?php esc_html_e( 'Configure schema markup for your WooCommerce products', 'giga-schema-pro' ); ?></p>
+									</div>
+								</div>
+								<div class="giga-sp-header-actions">
+									<a href="#" class="giga-btn giga-btn-secondary" onclick="window.location.href='?page=giga-schema-pro'; return false;">
+										<span class="dashicons dashicons-arrow-left"></span>
+										<?php esc_html_e( 'Back to Dashboard', 'giga-schema-pro' ); ?>
+									</a>
+								</div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- WooCommerce Status Card -->
+					<div class="giga-card">
+						<div class="giga-card-header">
+							<h3 class="giga-card-title">
+								<span class="dashicons dashicons-yes-alt"></span>
+								<?php esc_html_e( 'WooCommerce Integration Status', 'giga-schema-pro' ); ?>
+							</h3>
+						</div>
+						<div class="giga-card-body">
+							<div class="giga-woo-status">
+								<div class="giga-status-item">
+									<div class="giga-status-icon active">
+										<span class="dashicons dashicons-yes"></span>
+									</div>
+									<div class="giga-status-content">
+										<div class="giga-status-title"><?php esc_html_e( 'WooCommerce Detected', 'giga-schema-pro' ); ?></div>
+										<div class="giga-status-description"><?php esc_html_e( 'WooCommerce is active and ready for schema integration', 'giga-schema-pro' ); ?></div>
+									</div>
+								</div>
+								<div class="giga-status-item">
+									<div class="giga-status-icon <?php echo !empty($default_brand) ? 'active' : 'inactive'; ?>">
+										<span class="dashicons <?php echo !empty($default_brand) ? 'dashicons-yes' : 'dashicons-no'; ?>"></span>
+									</div>
+									<div class="giga-status-content">
+										<div class="giga-status-title"><?php esc_html_e( 'Brand Configuration', 'giga-schema-pro' ); ?></div>
+										<div class="giga-status-description"><?php echo !empty($default_brand) ? esc_html__( 'Default brand is configured', 'giga-schema-pro' ) : esc_html__( 'Set a default brand for products', 'giga-schema-pro' ); ?></div>
+									</div>
+								</div>
+								<div class="giga-status-item">
+									<div class="giga-status-icon <?php echo !empty($shipping_rate) ? 'active' : 'inactive'; ?>">
+										<span class="dashicons <?php echo !empty($shipping_rate) ? 'dashicons-yes' : 'dashicons-no'; ?>"></span>
+									</div>
+									<div class="giga-status-content">
+										<div class="giga-status-title"><?php esc_html_e( 'Shipping Configuration', 'giga-schema-pro' ); ?></div>
+										<div class="giga-status-description"><?php echo !empty($shipping_rate) ? esc_html__( 'Shipping rates are configured', 'giga-schema-pro' ) : esc_html__( 'Set default shipping rates', 'giga-schema-pro' ); ?></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- Settings Tabs -->
+					<div class="giga-tabs">
+						<a href="#shipping-settings" class="giga-sp-tab active" onclick="return false;">
+							<span class="dashicons dashicons-shipping"></span>
+							<?php esc_html_e( 'Shipping & Returns', 'giga-schema-pro' ); ?>
+						</a>
+						<a href="#product-fields" class="giga-sp-tab" onclick="return false;">
+							<span class="dashicons dashicons-edit"></span>
+							<?php esc_html_e( 'Product Fields', 'giga-schema-pro' ); ?>
+						</a>
+						<a href="#advanced-settings" class="giga-sp-tab" onclick="return false;">
+							<span class="dashicons dashicons-cog"></span>
+							<?php esc_html_e( 'Advanced', 'giga-schema-pro' ); ?>
+						</a>
+					</div>
+	
+					<!-- Shipping & Returns Settings -->
+					<div id="shipping-settings" class="giga-panel">
+						<form method="post" action="" class="giga-settings-form">
+							<?php wp_nonce_field( 'giga_sp_woo_settings' ); ?>
+							
+							<div class="giga-settings-grid">
+								<div class="giga-settings-column">
+									<div class="giga-form-group">
+										<label for="shipping_rate" class="giga-form-label">
+											<span class="dashicons dashicons-shipping"></span>
+											<?php esc_html_e( 'Default Shipping Rate', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="number" step="0.01" name="shipping_rate" id="shipping_rate" value="<?php echo esc_attr( $shipping_rate ); ?>" class="giga-form-input" placeholder="0.00">
+										<p class="giga-form-description"><?php esc_html_e( 'Default shipping cost for all products. Leave empty to disable shipping details in schema.', 'giga-schema-pro' ); ?></p>
+									</div>
+	
+									<div class="giga-form-group">
+										<label for="shipping_currency" class="giga-form-label">
+											<span class="dashicons dashicons-money-alt"></span>
+											<?php esc_html_e( 'Shipping Currency', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="text" name="shipping_currency" id="shipping_currency" value="<?php echo esc_attr( $shipping_currency ); ?>" class="giga-form-input" placeholder="USD">
+										<p class="giga-form-description"><?php esc_html_e( 'Currency code for shipping (e.g., USD, EUR). Leave empty to use WooCommerce default.', 'giga-schema-pro' ); ?></p>
+									</div>
+	
+									<div class="giga-form-group">
+										<label for="return_days" class="giga-form-label">
+											<span class="dashicons dashicons-undo"></span>
+											<?php esc_html_e( 'Return Policy Days', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="number" name="return_days" id="return_days" value="<?php echo esc_attr( $return_days ); ?>" class="giga-form-input" min="0">
+										<p class="giga-form-description"><?php esc_html_e( 'Number of days customers can return products.', 'giga-schema-pro' ); ?></p>
+									</div>
+	
+									<div class="giga-form-group">
+										<label for="return_policy_category" class="giga-form-label">
+											<span class="dashicons dashicons-list-alt"></span>
+											<?php esc_html_e( 'Return Policy Category', 'giga-schema-pro' ); ?>
+										</label>
+										<select name="return_policy_category" id="return_policy_category" class="giga-form-select">
+											<option value="https://schema.org/MerchantReturnFiniteReturnWindow" <?php selected( $return_policy_category, 'https://schema.org/MerchantReturnFiniteReturnWindow' ); ?>><?php esc_html_e( 'Finite Return Window', 'giga-schema-pro' ); ?></option>
+											<option value="https://schema.org/MerchantReturnUnlimitedWindow" <?php selected( $return_policy_category, 'https://schema.org/MerchantReturnUnlimitedWindow' ); ?>><?php esc_html_e( 'Unlimited Return Window', 'giga-schema-pro' ); ?></option>
+											<option value="https://schema.org/MerchantReturnNotPermitted" <?php selected( $return_policy_category, 'https://schema.org/MerchantReturnNotPermitted' ); ?>><?php esc_html_e( 'Returns Not Permitted', 'giga-schema-pro' ); ?></option>
+										</select>
+										<p class="giga-form-description"><?php esc_html_e( 'Choose the appropriate return policy category for your business.', 'giga-schema-pro' ); ?></p>
+									</div>
+								</div>
+	
+								<div class="giga-settings-column">
+									<div class="giga-info-card">
+										<div class="giga-info-header">
+											<span class="dashicons dashicons-info"></span>
+											<h4><?php esc_html_e( 'Schema Benefits', 'giga-schema-pro' ); ?></h4>
+										</div>
+										<div class="giga-info-content">
+											<ul class="giga-info-list">
+												<li><?php esc_html_e( 'Improved product visibility in search results', 'giga-schema-pro' ); ?></li>
+												<li><?php esc_html_e( 'Rich snippets in Google search', 'giga-schema-pro' ); ?></li>
+												<li><?php esc_html_e( 'Better shopping experience for customers', 'giga-schema-pro' ); ?></li>
+												<li><?php esc_html_e( 'Enhanced local SEO for physical stores', 'giga-schema-pro' ); ?></li>
+											</ul>
+										</div>
+									</div>
+	
+									<div class="giga-preview-card">
+										<div class="giga-preview-header">
+											<span class="dashicons dashicons-eye"></span>
+											<h4><?php esc_html_e( 'Schema Preview', 'giga-schema-pro' ); ?></h4>
+										</div>
+										<div class="giga-preview-content">
+											<div class="giga-schema-preview">
+												<pre><code>{
+		 "@type": "Offer",
+		 "priceCurrency": "<?php echo esc_attr( $shipping_currency ?: 'USD' ); ?>",
+		 "price": "<?php echo esc_attr( $shipping_rate ?: '0.00' ); ?>",
+		 "shippingDetails": {
+		   "@type": "OfferShippingDetails",
+		   "shippingRate": {
+		     "@type": "MonetaryAmount",
+		     "value": "<?php echo esc_attr( $shipping_rate ?: '0.00' ); ?>",
+		     "currency": "<?php echo esc_attr( $shipping_currency ?: 'USD' ); ?>"
+		   }
+		 },
+		 "hasMerchantReturnPolicy": {
+		   "@type": "MerchantReturnPolicy",
+		   "merchantReturnDays": <?php echo esc_attr( $return_days ); ?>,
+		   "returnPolicyCategory": "<?php echo esc_attr( $return_policy_category ); ?>"
+		 }
+	}</code></pre>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+	
+							<div class="giga-form-actions">
+								<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_woo_save' ); ?>
+								<button type="button" class="giga-btn giga-btn-secondary" onclick="window.location.reload();">
+									<span class="dashicons dashicons-image-rotate"></span>
+									<?php esc_html_e( 'Reset', 'giga-schema-pro' ); ?>
+								</button>
+							</div>
+						</form>
+					</div>
+	
+					<!-- Product Fields Settings -->
+					<div id="product-fields" class="giga-panel" style="display: none;">
+						<form method="post" action="" class="giga-settings-form">
+							<?php wp_nonce_field( 'giga_sp_woo_settings' ); ?>
+							
+							<div class="giga-settings-grid">
+								<div class="giga-settings-column">
+									<div class="giga-form-group">
+										<label for="default_brand" class="giga-form-label">
+											<span class="dashicons dashicons-tag"></span>
+											<?php esc_html_e( 'Default Brand Name', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="text" name="default_brand" id="default_brand" value="<?php echo esc_attr( $default_brand ); ?>" class="giga-form-input" placeholder="Your Brand Name">
+										<p class="giga-form-description"><?php esc_html_e( 'Default brand name for products. Will be used if no product-specific brand is set.', 'giga-schema-pro' ); ?></p>
+									</div>
+	
+									<div class="giga-form-group">
+										<label for="gtin_field" class="giga-form-label">
+											<span class="dashicons dashicons-barcode"></span>
+											<?php esc_html_e( 'GTIN Custom Field', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="text" name="gtin_field" id="gtin_field" value="<?php echo esc_attr( $gtin_field ); ?>" class="giga-form-input" placeholder="_gtin">
+										<p class="giga-form-description"><?php esc_html_e( 'Custom field name for GTIN (Global Trade Item Number). Default: _gtin', 'giga-schema-pro' ); ?></p>
+									</div>
+	
+									<div class="giga-form-group">
+										<label for="mpn_field" class="giga-form-label">
+											<span class="dashicons dashicons-id"></span>
+											<?php esc_html_e( 'MPN Custom Field', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="text" name="mpn_field" id="mpn_field" value="<?php echo esc_attr( $mpn_field ); ?>" class="giga-form-input" placeholder="_mpn">
+										<p class="giga-form-description"><?php esc_html_e( 'Custom field name for MPN (Manufacturer Part Number). Default: _mpn', 'giga-schema-pro' ); ?></p>
+									</div>
+	
+									<div class="giga-form-group">
+										<label for="brand_field" class="giga-form-label">
+											<span class="dashicons dashicons-store"></span>
+											<?php esc_html_e( 'Brand Custom Field', 'giga-schema-pro' ); ?>
+										</label>
+										<input type="text" name="brand_field" id="brand_field" value="<?php echo esc_attr( $brand_field ); ?>" class="giga-form-input" placeholder="_brand">
+										<p class="giga-form-description"><?php esc_html_e( 'Custom field name for Brand. Default: _brand', 'giga-schema-pro' ); ?></p>
+									</div>
+								</div>
+	
+								<div class="giga-settings-column">
+									<div class="giga-field-guide">
+										<div class="giga-guide-header">
+											<span class="dashicons dashicons-book"></span>
+											<h4><?php esc_html_e( 'Field Configuration Guide', 'giga-schema-pro' ); ?></h4>
+										</div>
+										<div class="giga-guide-content">
+											<div class="giga-guide-section">
+												<h5><?php esc_html_e( 'Product Custom Fields', 'giga-schema-pro' ); ?></h5>
+												<p><?php esc_html_e( 'Configure these custom fields to enhance your product schema with additional identifiers:', 'giga-schema-pro' ); ?></p>
+												<ul class="giga-guide-list">
+													<li>
+														<strong><?php esc_html_e( 'GTIN:', 'giga-schema-pro' ); ?></strong>
+														<?php esc_html_e( 'Global Trade Item Number for product identification', 'giga-schema-pro' ); ?>
+													</li>
+													<li>
+														<strong><?php esc_html_e( 'MPN:', 'giga-schema-pro' ); ?></strong>
+														<?php esc_html_e( 'Manufacturer Part Number for specific product models', 'giga-schema-pro' ); ?>
+													</li>
+													<li>
+														<strong><?php esc_html_e( 'Brand:', 'giga-schema-pro' ); ?></strong>
+														<?php esc_html_e( 'Product brand name for better categorization', 'giga-schema-pro' ); ?>
+													</li>
+												</ul>
+											</div>
+											
+											<div class="giga-guide-section">
+												<h5><?php esc_html_e( 'How to Set Up Custom Fields', 'giga-schema-pro' ); ?></h5>
+												<ol class="giga-guide-list">
+													<li><?php esc_html_e( 'Go to WooCommerce → Products → Attributes', 'giga-schema-pro' ); ?></li>
+													<li><?php esc_html_e( 'Create new attributes for GTIN, MPN, and Brand', 'giga-schema-pro' ); ?></li>
+													<li><?php esc_html_e( 'Assign these attributes to your products', 'giga-schema-pro' ); ?></li>
+													<li><?php esc_html_e( 'The schema will automatically include these values', 'giga-schema-pro' ); ?></li>
+												</ol>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+	
+							<div class="giga-form-actions">
+								<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_woo_save' ); ?>
+							</div>
+						</form>
+					</div>
+	
+					<!-- Advanced Settings -->
+					<div id="advanced-settings" class="giga-panel" style="display: none;">
+						<form method="post" action="" class="giga-settings-form">
+							<?php wp_nonce_field( 'giga_sp_woo_settings' ); ?>
+							
+							<div class="giga-settings-grid">
+								<div class="giga-settings-column">
+									<div class="giga-advanced-section">
+										<h3><?php esc_html_e( 'Schema Configuration', 'giga-schema-pro' ); ?></h3>
+										
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" name="enable_aggregate_rating" checked disabled>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Enable Aggregate Rating Schema', 'giga-schema-pro' ); ?></span>
+											</label>
+											<p class="giga-form-description"><?php esc_html_e( 'Automatically includes product ratings and reviews in schema markup (Pro feature).', 'giga-schema-pro' ); ?></p>
+										</div>
+	
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" name="enable_review_schema" checked disabled>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Enable Individual Review Schema', 'giga-schema-pro' ); ?></span>
+											</label>
+											<p class="giga-form-description"><?php esc_html_e( 'Includes individual customer reviews in schema markup (Pro feature).', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+	
+									<div class="giga-advanced-section">
+										<h3><?php esc_html_e( 'Performance Settings', 'giga-schema-pro' ); ?></h3>
+										
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" name="auto_generate_schema" checked>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Auto-generate schema for all products', 'giga-schema-pro' ); ?></span>
+											</label>
+											<p class="giga-form-description"><?php esc_html_e( 'Automatically apply schema to all WooCommerce products.', 'giga-schema-pro' ); ?></p>
+										</div>
+	
+										<div class="giga-form-group">
+											<label class="giga-form-label">
+												<input type="checkbox" name="include_images" checked>
+												<span class="giga-checkbox-label"><?php esc_html_e( 'Include product images in schema', 'giga-schema-pro' ); ?></span>
+											</label>
+											<p class="giga-form-description"><?php esc_html_e( 'Add product images to schema markup for rich results.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+	
+								<div class="giga-settings-column">
+									<div class="giga-debug-info">
+										<div class="giga-debug-header">
+											<span class="dashicons dashicons-bug"></span>
+											<h4><?php esc_html_e( 'Debug Information', 'giga-schema-pro' ); ?></h4>
+										</div>
+										<div class="giga-debug-content">
+											<div class="giga-debug-item">
+												<span class="giga-debug-label"><?php esc_html_e( 'Active Products:', 'giga-schema-pro' ); ?></span>
+												<span class="giga-debug-value"><?php echo esc_html( $this->get_product_count() ); ?></span>
+											</div>
+											<div class="giga-debug-item">
+												<span class="giga-debug-label"><?php esc_html_e( 'Schema Generated:', 'giga-schema-pro' ); ?></span>
+												<span class="giga-debug-value"><?php echo esc_html( $this->get_schema_count() ); ?></span>
+											</div>
+											<div class="giga-debug-item">
+												<span class="giga-debug-label"><?php esc_html_e( 'Last Updated:', 'giga-schema-pro' ); ?></span>
+												<span class="giga-debug-value"><?php echo esc_html( date( 'F j, Y, g:i a' ) ); ?></span>
+											</div>
+										</div>
+									</div>
+	
+									<div class="giga-actions-card">
+										<div class="giga-actions-header">
+											<span class="dashicons dashicons-hammer"></span>
+											<h4><?php esc_html_e( 'Maintenance Actions', 'giga-schema-pro' ); ?></h4>
+										</div>
+										<div class="giga-actions-content">
+											<button type="button" class="giga-btn giga-btn-secondary" onclick="gigaRegenerateAllSchema();">
+												<span class="dashicons dashicons-update"></span>
+												<?php esc_html_e( 'Regenerate All Schema', 'giga-schema-pro' ); ?>
+											</button>
+											<button type="button" class="giga-btn giga-btn-secondary" onclick="gigaClearSchemaCache();">
+												<span class="dashicons dashicons-trash"></span>
+												<?php esc_html_e( 'Clear Schema Cache', 'giga-schema-pro' ); ?>
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+	
+							<div class="giga-form-actions">
+								<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_woo_save' ); ?>
+							</div>
+						</form>
+					</div>
+	
+				</div>
 			</div>
 			<?php
 		}
@@ -1273,82 +1794,205 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'Giga Schema Pro Settings', 'giga-schema-pro' ); ?></h1>
-				<form method="post" action="">
+				
+				<div class="giga-settings-header">
+					<div class="giga-settings-intro">
+						<p><?php esc_html_e( 'Configure your organization information and social profiles to enhance your schema markup.', 'giga-schema-pro' ); ?></p>
+					</div>
+				</div>
+
+				<form method="post" action="" class="giga-settings-form">
 					<?php wp_nonce_field( 'giga_sp_settings' ); ?>
-					<h2><?php esc_html_e( 'Organization Information', 'giga-schema-pro' ); ?></h2>
-					<table class="form-table">
-						<tr>
-							<th scope="row">
-								<label for="organization_name"><?php esc_html_e( 'Organization Name', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="text" name="organization_name" id="organization_name" value="<?php echo esc_attr( $org_name ); ?>" class="regular-text">
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="organization_url"><?php esc_html_e( 'Organization URL', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="url" name="organization_url" id="organization_url" value="<?php echo esc_attr( $org_url ); ?>" class="regular-text">
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="organization_logo"><?php esc_html_e( 'Organization Logo URL', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="url" name="organization_logo" id="organization_logo" value="<?php echo esc_attr( $org_logo ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'Full URL to your organization logo image.', 'giga-schema-pro' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="organization_description"><?php esc_html_e( 'Organization Description', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<textarea name="organization_description" id="organization_description" rows="5" class="large-text"><?php echo esc_textarea( $org_desc ); ?></textarea>
-							</td>
-						</tr>
-					</table>
+					
+					<div class="giga-tabs">
+						<button type="button" class="giga-sp-tab active" data-tab="organization-tab">
+							<span class="dashicons dashicons-business"></span>
+							<?php esc_html_e( 'Organization', 'giga-schema-pro' ); ?>
+						</button>
+						<button type="button" class="giga-sp-tab" data-tab="social-tab">
+							<span class="dashicons dashicons-share-alt"></span>
+							<?php esc_html_e( 'Social Profiles', 'giga-schema-pro' ); ?>
+						</button>
+					</div>
 
-					<h2><?php esc_html_e( 'Social Profiles', 'giga-schema-pro' ); ?></h2>
-					<table class="form-table">
-						<tr>
-							<th scope="row">
-								<label for="social_facebook"><?php esc_html_e( 'Facebook URL', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="url" name="social_facebook" id="social_facebook" value="<?php echo esc_attr( $social_facebook ); ?>" class="regular-text">
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="social_twitter"><?php esc_html_e( 'Twitter URL', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="url" name="social_twitter" id="social_twitter" value="<?php echo esc_attr( $social_twitter ); ?>" class="regular-text">
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="social_linkedin"><?php esc_html_e( 'LinkedIn URL', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="url" name="social_linkedin" id="social_linkedin" value="<?php echo esc_attr( $social_linkedin ); ?>" class="regular-text">
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">
-								<label for="social_instagram"><?php esc_html_e( 'Instagram URL', 'giga-schema-pro' ); ?></label>
-							</th>
-							<td>
-								<input type="url" name="social_instagram" id="social_instagram" value="<?php echo esc_attr( $social_instagram ); ?>" class="regular-text">
-							</td>
-						</tr>
-					</table>
+					<div id="organization-tab" class="giga-tab-content giga-settings-section">
+						<div class="giga-settings-grid">
+							<div class="giga-settings-column">
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-business"></span>
+										<h3><?php esc_html_e( 'Basic Information', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="organization_name" class="giga-form-label">
+												<span class="dashicons dashicons-admin-site"></span>
+												<?php esc_html_e( 'Organization Name', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="text" name="organization_name" id="organization_name" value="<?php echo esc_attr( $org_name ); ?>" class="giga-form-input" required>
+											<p class="giga-form-description"><?php esc_html_e( 'The official name of your organization.', 'giga-schema-pro' ); ?></p>
+										</div>
 
-					<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_settings_save' ); ?>
+										<div class="giga-form-group">
+											<label for="organization_url" class="giga-form-label">
+												<span class="dashicons dashicons-admin-links"></span>
+												<?php esc_html_e( 'Organization URL', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="url" name="organization_url" id="organization_url" value="<?php echo esc_attr( $org_url ); ?>" class="giga-form-input" required>
+											<p class="giga-form-description"><?php esc_html_e( 'The main website URL of your organization.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-images"></span>
+										<h3><?php esc_html_e( 'Branding', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="organization_logo" class="giga-form-label">
+												<span class="dashicons dashicons-image"></span>
+												<?php esc_html_e( 'Organization Logo URL', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="url" name="organization_logo" id="organization_logo" value="<?php echo esc_attr( $org_logo ); ?>" class="giga-form-input">
+											<p class="giga-form-description"><?php esc_html_e( 'Full URL to your organization logo image (recommended: 600x600px).', 'giga-schema-pro' ); ?></p>
+											
+											<?php if ( ! empty( $org_logo ) ) : ?>
+												<div class="giga-logo-preview">
+													<img src="<?php echo esc_url( $org_logo ); ?>" alt="<?php esc_attr_e( 'Organization Logo', 'giga-schema-pro' ); ?>" class="giga-logo-img">
+												</div>
+											<?php endif; ?>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="giga-settings-column">
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-text-page"></span>
+										<h3><?php esc_html_e( 'Description', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="organization_description" class="giga-form-label">
+												<span class="dashicons dashicons-editor-alignleft"></span>
+												<?php esc_html_e( 'Organization Description', 'giga-schema-pro' ); ?>
+											</label>
+											<textarea name="organization_description" id="organization_description" rows="8" class="giga-form-input" required><?php echo esc_textarea( $org_desc ); ?></textarea>
+											<p class="giga-form-description"><?php esc_html_e( 'A detailed description of your organization. This will be used in schema markup.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-info"></span>
+										<h3><?php esc_html_e( 'Settings Summary', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-debug-item">
+											<span class="giga-debug-label"><?php esc_html_e( 'Organization Name', 'giga-schema-pro' ); ?></span>
+											<span class="giga-debug-value"><?php echo ! empty( $org_name ) ? esc_html( $org_name ) : esc_html__( 'Not set', 'giga-schema-pro' ); ?></span>
+										</div>
+										<div class="giga-debug-item">
+											<span class="giga-debug-label"><?php esc_html_e( 'Logo', 'giga-schema-pro' ); ?></span>
+											<span class="giga-debug-value"><?php echo ! empty( $org_logo ) ? esc_html__( 'Set', 'giga-schema-pro' ) : esc_html__( 'Not set', 'giga-schema-pro' ); ?></span>
+										</div>
+										<div class="giga-debug-item">
+											<span class="giga-debug-label"><?php esc_html_e( 'Social Profiles', 'giga-schema-pro' ); ?></span>
+											<span class="giga-debug-value"><?php echo ( ! empty( $social_facebook ) || ! empty( $social_twitter ) || ! empty( $social_linkedin ) || ! empty( $social_instagram ) ) ? esc_html__( 'Connected', 'giga-schema-pro' ) : esc_html__( 'Not connected', 'giga-schema-pro' ); ?></span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="social-tab" class="giga-tab-content giga-settings-section" style="display: none;">
+						<div class="giga-settings-grid">
+							<div class="giga-settings-column">
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-facebook"></span>
+										<h3><?php esc_html_e( 'Facebook', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="social_facebook" class="giga-form-label">
+												<span class="dashicons dashicons-facebook-alt"></span>
+												<?php esc_html_e( 'Facebook Profile URL', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="url" name="social_facebook" id="social_facebook" value="<?php echo esc_attr( $social_facebook ); ?>" class="giga-form-input">
+											<p class="giga-form-description"><?php esc_html_e( 'Your Facebook profile or page URL.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-twitter"></span>
+										<h3><?php esc_html_e( 'Twitter', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="social_twitter" class="giga-form-label">
+												<span class="dashicons dashicons-twitter"></span>
+												<?php esc_html_e( 'Twitter Profile URL', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="url" name="social_twitter" id="social_twitter" value="<?php echo esc_attr( $social_twitter ); ?>" class="giga-form-input">
+											<p class="giga-form-description"><?php esc_html_e( 'Your Twitter profile URL.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="giga-settings-column">
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-linkedin"></span>
+										<h3><?php esc_html_e( 'LinkedIn', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="social_linkedin" class="giga-form-label">
+												<span class="dashicons dashicons-linkedin"></span>
+												<?php esc_html_e( 'LinkedIn Profile URL', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="url" name="social_linkedin" id="social_linkedin" value="<?php echo esc_attr( $social_linkedin ); ?>" class="giga-form-input">
+											<p class="giga-form-description"><?php esc_html_e( 'Your LinkedIn profile or company page URL.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+
+								<div class="giga-settings-card">
+									<div class="giga-card-header">
+										<span class="dashicons dashicons-instagram"></span>
+										<h3><?php esc_html_e( 'Instagram', 'giga-schema-pro' ); ?></h3>
+									</div>
+									<div class="giga-card-content">
+										<div class="giga-form-group">
+											<label for="social_instagram" class="giga-form-label">
+												<span class="dashicons dashicons-instagram"></span>
+												<?php esc_html_e( 'Instagram Profile URL', 'giga-schema-pro' ); ?>
+											</label>
+											<input type="url" name="social_instagram" id="social_instagram" value="<?php echo esc_attr( $social_instagram ); ?>" class="giga-form-input">
+											<p class="giga-form-description"><?php esc_html_e( 'Your Instagram profile URL.', 'giga-schema-pro' ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="giga-form-actions">
+						<?php submit_button( __( 'Save Settings', 'giga-schema-pro' ), 'primary', 'giga_sp_settings_save' ); ?>
+						<button type="button" class="giga-btn-secondary giga-reset-settings">
+							<span class="dashicons dashicons-image-rotate"></span>
+							<?php esc_html_e( 'Reset to Defaults', 'giga-schema-pro' ); ?>
+						</button>
+					</div>
 				</form>
 			</div>
 			<?php
@@ -1433,6 +2077,149 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 
 				update_post_meta( $post_id, '_giga_sp_custom_json', $custom_json );
 			}
+		}
+
+		/**
+			* Get product count for WooCommerce
+			*
+			* @since 1.0.0
+			* @return int
+			*/
+		private function get_product_count() {
+			if ( ! class_exists( 'WooCommerce' ) ) {
+				return 0;
+			}
+			
+			$prod_counts = wp_count_posts( 'product' );
+			return (int) $prod_counts->publish;
+		}
+
+		/**
+			* Get schema count for WooCommerce products
+			*
+			* @since 1.0.0
+			* @return int
+			*/
+		private function get_schema_count() {
+			if ( ! class_exists( 'WooCommerce' ) ) {
+				return 0;
+			}
+			
+			$products = get_posts( [
+				'post_type' => 'product',
+				'posts_per_page' => -1,
+				'fields' => 'ids',
+			] );
+			
+			return count( $products );
+		}
+
+		/**
+		 * Get validation statistics
+		 *
+		 * @since 1.0.0
+		 * @return array
+		 */
+		private function get_validation_stats() {
+			$stats = [
+				'products' => 0,
+				'validated' => 0,
+				'warnings' => 0,
+				'errors' => 0,
+			];
+			
+			// Get product count if WooCommerce is active
+			if ( class_exists( 'WooCommerce' ) ) {
+				$prod_counts = wp_count_posts( 'product' );
+				$stats['products'] = (int) $prod_counts->publish;
+			}
+			
+			// Get validation results
+			$validation_results = get_option( 'giga_sp_validation_results', [] );
+			if ( !empty($validation_results) && isset($validation_results['passed']) ) {
+				$stats['validated'] = (int) $validation_results['passed'];
+				$stats['warnings'] = (int) ($validation_results['warnings'] ?? 0);
+				$stats['errors'] = (int) ($validation_results['failed'] ?? 0);
+			}
+			
+			return $stats;
+		}
+
+		/**
+		 * Display validation results
+		 *
+		 * @since 1.0.0
+		 * @param array $results Validation results
+		 */
+		private function display_validation_results( $results ) {
+			$timestamp = isset($results['timestamp']) ? date('F j, Y, g:i a', $results['timestamp']) : '';
+			$total = isset($results['total']) ? $results['total'] : 0;
+			$passed = isset($results['passed']) ? $results['passed'] : 0;
+			$failed = isset($results['failed']) ? $results['failed'] : 0;
+			$warnings = isset($results['warnings']) ? $results['warnings'] : 0;
+			$errors = isset($results['errors']) ? $results['errors'] : [];
+			
+			$success_rate = $total > 0 ? round(($passed / $total) * 100, 1) : 0;
+			?>
+			<div class="giga-validation-summary">
+				<div class="giga-validation-meta">
+					<div class="giga-validation-timestamp">
+						<span class="dashicons dashicons-clock"></span>
+						<?php printf( esc_html__( 'Last run: %s', 'giga-schema-pro' ), esc_html( $timestamp ) ); ?>
+					</div>
+					<div class="giga-validation-rate">
+						<span class="dashicons dashicons-percentage"></span>
+						<?php printf( esc_html__( '%s%% Success Rate', 'giga-schema-pro' ), esc_html( $success_rate ) ); ?>
+					</div>
+				</div>
+				
+				<div class="giga-validation-stats">
+					<div class="giga-validation-stat-item">
+						<div class="giga-validation-stat-value passed"><?php echo esc_html( $passed ); ?></div>
+						<div class="giga-validation-stat-label"><?php esc_html_e( 'Passed', 'giga-schema-pro' ); ?></div>
+					</div>
+					<div class="giga-validation-stat-item">
+						<div class="giga-validation-stat-value warning"><?php echo esc_html( $warnings ); ?></div>
+						<div class="giga-validation-stat-label"><?php esc_html_e( 'Warnings', 'giga-schema-pro' ); ?></div>
+					</div>
+					<div class="giga-validation-stat-item">
+						<div class="giga-validation-stat-value error"><?php echo esc_html( $failed ); ?></div>
+						<div class="giga-validation-stat-label"><?php esc_html_e( 'Failed', 'giga-schema-pro' ); ?></div>
+					</div>
+				</div>
+			</div>
+			
+			<?php if ( !empty($errors) ) : ?>
+				<div class="giga-validation-errors">
+					<h4><?php esc_html_e( 'Issues Found', 'giga-schema-pro' ); ?></h4>
+					<div class="giga-error-list">
+						<?php foreach ( $errors as $error ) : ?>
+							<div class="giga-error-item">
+								<div class="giga-error-type"><?php echo esc_html( $error['type'] ); ?></div>
+								<div class="giga-error-message"><?php echo esc_html( $error['message'] ); ?></div>
+								<div class="giga-error-pages">
+									<?php
+									/* translators: %s: comma-separated list of pages */
+									printf( esc_html__( 'Pages: %s', 'giga-schema-pro' ), '<strong>' . esc_html( implode(', ', $error['pages']) ) . '</strong>' );
+									?>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				</div>
+			<?php endif; ?>
+			
+			<div class="giga-validation-actions">
+				<button type="button" class="giga-btn giga-btn-secondary" id="giga-rerun-validation">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Re-run Validation', 'giga-schema-pro' ); ?>
+				</button>
+				<button type="button" class="giga-btn giga-btn-secondary" id="giga-export-validation">
+					<span class="dashicons dashicons-download"></span>
+					<?php esc_html_e( 'Export Report', 'giga-schema-pro' ); ?>
+				</button>
+			</div>
+			<?php
 		}
 	}
 }

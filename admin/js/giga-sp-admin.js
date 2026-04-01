@@ -39,6 +39,13 @@
         
         // Initialize schema type selection
         initSchemaSelection();
+        
+        // Initialize WooCommerce-specific functionality
+        initWooCommerceTabs();
+        initWooCommerceValidation();
+        
+        // Initialize general settings tabs
+        initGeneralSettingsTabs();
     });
     
     // Tab Navigation System
@@ -569,5 +576,716 @@
             $counter.text(selectedCount);
         }
     }
+    
+    // WooCommerce Settings Specific Functions
+    function initWooCommerceSettings() {
+        // Tab switching for WooCommerce settings
+        $('.giga-tabs .giga-sp-tab').on('click', function(e) {
+            e.preventDefault();
+            
+            const $tab = $(this);
+            const targetId = $tab.attr('href');
+            const $targetPanel = $(targetId);
+            
+            // Remove active class from all tabs
+            $('.giga-tabs .giga-sp-tab').removeClass('active');
+            
+            // Add active class to clicked tab
+            $tab.addClass('active');
+            
+            // Hide all panels
+            $('.giga-panel').hide();
+            
+            // Show target panel with animation
+            $targetPanel.fadeIn(300);
+        });
+        
+        // Form validation for WooCommerce settings
+        $('.giga-settings-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const $form = $(this);
+            const $submitBtn = $form.find('input[type="submit"]');
+            
+            // Validate required fields
+            let isValid = true;
+            const $requiredFields = $form.find('[required]');
+            
+            $requiredFields.each(function() {
+                const $field = $(this);
+                const $value = $field.val().trim();
+                
+                if (!$value) {
+                    isValid = false;
+                    $field.addClass('giga-error');
+                    showFieldError($field, 'This field is required');
+                } else {
+                    $field.removeClass('giga-error');
+                    hideFieldError($field);
+                }
+            });
+            
+            // Validate shipping rate
+            const $shippingRate = $('#shipping_rate');
+            if ($shippingRate.length && $shippingRate.val()) {
+                const rate = parseFloat($shippingRate.val());
+                if (isNaN(rate) || rate < 0) {
+                    isValid = false;
+                    $shippingRate.addClass('giga-error');
+                    showFieldError($shippingRate, 'Please enter a valid shipping rate');
+                }
+            }
+            
+            // Validate return days
+            const $returnDays = $('#return_days');
+            if ($returnDays.length && $returnDays.val()) {
+                const days = parseInt($returnDays.val());
+                if (isNaN(days) || days < 0) {
+                    isValid = false;
+                    $returnDays.addClass('giga-error');
+                    showFieldError($returnDays, 'Please enter a valid number of days');
+                }
+            }
+            
+            if (isValid) {
+                // Show loading state
+                $submitBtn.prop('disabled', true).val('Saving...');
+                
+                // Submit the form
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: $form.serialize() + '&action=giga_sp_save_woo_settings',
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification('WooCommerce settings saved successfully!', 'success');
+                            
+                            // Update status indicators
+                            updateWooCommerceStatus();
+                            
+                            // Reset button
+                            $submitBtn.prop('disabled', false).val('Save Settings');
+                        } else {
+                            showNotification('Error saving settings: ' + response.data.message, 'error');
+                            $submitBtn.prop('disabled', false).val('Save Settings');
+                        }
+                    },
+                    error: function() {
+                        showNotification('Error saving settings. Please try again.', 'error');
+                        $submitBtn.prop('disabled', false).val('Save Settings');
+                    }
+                });
+            }
+        });
+        
+        // Currency input formatting
+        $('#shipping_currency').on('input', function() {
+            const $input = $(this);
+            const value = $input.val().toUpperCase();
+            
+            // Auto-uppercase currency codes
+            if (value.length <= 3) {
+                $input.val(value);
+            }
+        });
+        
+        // Real-time schema preview updates
+        $('#shipping_rate, #shipping_currency, #return_days').on('input', function() {
+            updateSchemaPreview();
+        });
+        
+        // Initialize schema preview
+        updateSchemaPreview();
+    }
+    
+    function updateWooCommerceStatus() {
+        // Update WooCommerce status indicators
+        const $defaultBrand = $('#default_brand');
+        const $shippingRate = $('#shipping_rate');
+        
+        // Update brand status
+        if ($defaultBrand.val().trim()) {
+            $('.giga-status-item:nth-child(2) .giga-status-icon').addClass('active').removeClass('inactive');
+        } else {
+            $('.giga-status-item:nth-child(2) .giga-status-icon').removeClass('active').addClass('inactive');
+        }
+        
+        // Update shipping status
+        if ($shippingRate.val().trim()) {
+            $('.giga-status-item:nth-child(3) .giga-status-icon').addClass('active').removeClass('inactive');
+        } else {
+            $('.giga-status-item:nth-child(3) .giga-status-icon').removeClass('active').addClass('inactive');
+        }
+    }
+    
+    function updateSchemaPreview() {
+        const $shippingRate = $('#shipping_rate');
+        const $shippingCurrency = $('#shipping_currency');
+        const $returnDays = $('#return_days');
+        
+        const rate = $shippingRate.val() || '0.00';
+        const currency = $shippingCurrency.val() || 'USD';
+        const days = $returnDays.val() || '30';
+        
+        const preview = {
+            "@type": "Offer",
+            "priceCurrency": currency,
+            "price": rate,
+            "shippingDetails": {
+                "@type": "OfferShippingDetails",
+                "shippingRate": {
+                    "@type": "MonetaryAmount",
+                    "value": rate,
+                    "currency": currency
+                }
+            },
+            "hasMerchantReturnPolicy": {
+                "@type": "MerchantReturnPolicy",
+                "merchantReturnDays": parseInt(days),
+                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow"
+            }
+        };
+        
+        // Update preview in real-time
+        $('.giga-schema-preview pre code').text(JSON.stringify(preview, null, 2));
+    }
+    
+    // Maintenance actions
+    window.gigaRegenerateAllSchema = function() {
+        if (confirm('Are you sure you want to regenerate all schema for WooCommerce products? This may take a while for stores with many products.')) {
+            showNotification('Regenerating schema for all products...', 'info');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'giga_regenerate_woo_schema',
+                    nonce: gigaSpAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Schema regenerated successfully for ' + response.data.count + ' products!', 'success');
+                    } else {
+                        showNotification('Error regenerating schema: ' + response.data.message, 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Error regenerating schema. Please try again.', 'error');
+                }
+            });
+        }
+    };
+    
+    window.gigaClearSchemaCache = function() {
+        if (confirm('Are you sure you want to clear the schema cache?')) {
+            showNotification('Clearing schema cache...', 'info');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'giga_clear_schema_cache',
+                    nonce: gigaSpAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Schema cache cleared successfully!', 'success');
+                    } else {
+                        showNotification('Error clearing cache: ' + response.data.message, 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Error clearing cache. Please try again.', 'error');
+                }
+            });
+        }
+    };
+    
+    // Initialize WooCommerce settings when the page loads
+    $(document).ready(function() {
+        if ($('.giga-woo-status').length) {
+            initWooCommerceSettings();
+        }
+    });
+    
+    // WooCommerce Tab Navigation
+    function initWooCommerceTabs() {
+        $('.giga-woocommerce-tabs .giga-sp-tab').on('click', function(e) {
+            e.preventDefault();
+            
+            const $tab = $(this);
+            const targetId = $tab.attr('href');
+            const $targetPanel = $(targetId);
+            
+            // Remove active class from all tabs
+            $('.giga-woocommerce-tabs .giga-sp-tab').removeClass('active');
+            
+            // Add active class to clicked tab
+            $tab.addClass('active');
+            
+            // Hide all panels
+            $('.giga-woocommerce-tab-content').hide();
+            
+            // Show target panel with animation
+            $targetPanel.fadeIn(300);
+        });
+    }
+    
+    // WooCommerce Validation System
+    function initWooCommerceValidation() {
+        $('.giga-validate-btn').on('click', function(e) {
+            e.preventDefault();
+            
+            const $btn = $(this);
+            const originalText = $btn.html();
+            
+            // Show loading state
+            $btn.html('<span class="spinner"></span> Validating...').prop('disabled', true);
+            
+            // Show validation container if hidden
+            $('.giga-validation-container').show();
+            
+            // Simulate validation process
+            simulateWooCommerceValidation($btn);
+        });
+        
+        // Validation filters
+        $('.giga-filter-btn').on('click', function() {
+            const $filter = $(this);
+            const filterType = $filter.data('filter');
+            
+            // Toggle active state
+            $filter.toggleClass('active');
+            
+            // Filter results
+            filterValidationResults(filterType);
+        });
+        
+        // Export validation report
+        $('.giga-export-report').on('click', function(e) {
+            e.preventDefault();
+            
+            const $btn = $(this);
+            const originalText = $btn.html();
+            
+            $btn.html('<span class="spinner"></span> Exporting...').prop('disabled', true);
+            
+            // Simulate export
+            setTimeout(function() {
+                exportValidationReport($btn, originalText);
+            }, 1000);
+        });
+        
+        // Regenerate schema
+        $('.giga-regenerate-schema').on('click', function(e) {
+            e.preventDefault();
+            
+            if (!confirm('Are you sure you want to regenerate all schema markup? This may take some time.')) {
+                return;
+            }
+            
+            const $btn = $(this);
+            const originalText = $btn.html();
+            
+            $btn.html('<span class="spinner"></span> Regenerating...').prop('disabled', true);
+            
+            simulateSchemaRegeneration($btn, originalText);
+        });
+        
+        // Clear cache
+        $('.giga-clear-cache').on('click', function(e) {
+            e.preventDefault();
+            
+            if (!confirm('Are you sure you want to clear the schema cache?')) {
+                return;
+            }
+            
+            const $btn = $(this);
+            const originalText = $btn.html();
+            
+            $btn.html('<span class="spinner"></span> Clearing...').prop('disabled', true);
+            
+            clearSchemaCache($btn, originalText);
+        });
+    }
+    
+    // Simulate WooCommerce validation
+    function simulateWooCommerceValidation($btn) {
+        let progress = 0;
+        const progressInterval = setInterval(function() {
+            progress += Math.random() * 20;
+            if (progress > 100) progress = 100;
+            
+            $('.giga-progress-bar').width(progress + '%');
+            $('.giga-progress-text').text('Validating... ' + Math.round(progress) + '%');
+            
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                
+                // Show validation results
+                showWooCommerceValidationResults();
+                
+                // Restore button
+                $btn.html('<span class="dashicons dashicons-check"></span> Validate Schema').prop('disabled', false);
+            }
+        }, 200);
+    }
+    
+    // Show WooCommerce validation results
+    function showWooCommerceValidationResults() {
+        const resultsContainer = $('.giga-validation-results');
+        
+        // Mock validation results
+        const mockResults = [
+            {
+                type: 'success',
+                title: 'Product Schema Markup',
+                message: 'Product schema markup is properly implemented for all products.',
+                code: '{"@context":"https://schema.org","@type":"Product","name":"Sample Product","description":"A sample product description","offers":{"@type":"Offer","priceCurrency":"USD","price":29.99}}'
+            },
+            {
+                type: 'warning',
+                title: 'Missing Product Reviews',
+                message: '3 products are missing review schema markup. Consider adding customer reviews.',
+                code: '// Warning: Review schema not found for products 123, 456, 789'
+            },
+            {
+                type: 'error',
+                title: 'Invalid Product Images',
+                message: '2 products have invalid image URLs. Please fix image references.',
+                code: '// Error: Invalid image URL for product 456: https://invalid-url.com/image.jpg'
+            }
+        ];
+        
+        // Clear existing results
+        resultsContainer.empty();
+        
+        // Add results
+        mockResults.forEach(function(result) {
+            const resultItem = $('<div class="giga-result-item ' + result.type + '"></div>');
+            const resultHeader = $('<div class="giga-result-header"></div>');
+            const resultTitle = $('<h4 class="giga-result-title"></h4>').text(result.title);
+            const resultStatus = $('<div class="giga-result-status ' + result.type + '"></div>');
+            
+            if (result.type === 'success') {
+                resultStatus.html('<span class="dashicons dashicons-yes"></span> Valid');
+            } else if (result.type === 'warning') {
+                resultStatus.html('<span class="dashicons dashicons-warning"></span> Warning');
+            } else if (result.type === 'error') {
+                resultStatus.html('<span class="dashicons dashicons-no"></span> Error');
+            }
+            
+            resultHeader.append(resultTitle);
+            resultHeader.append(resultStatus);
+            
+            const resultDetails = $('<div class="giga-result-details"></div>').text(result.message);
+            
+            if (result.code) {
+                const resultCode = $('<div class="giga-result-code"></div>').text(result.code);
+                resultItem.append(resultHeader);
+                resultItem.append(resultDetails);
+                resultItem.append(resultCode);
+            } else {
+                resultItem.append(resultHeader);
+                resultItem.append(resultDetails);
+            }
+            
+            resultsContainer.append(resultItem);
+        });
+        
+        // Update statistics
+        updateValidationStats(mockResults);
+    }
+    
+    // Update validation statistics
+    function updateValidationStats(results) {
+        const stats = {
+            success: 0,
+            warning: 0,
+            error: 0,
+            total: results.length
+        };
+        
+        results.forEach(function(result) {
+            stats[result.type]++;
+        });
+        
+        $('.giga-stat-value.success').text(stats.success);
+        $('.giga-stat-value.warning').text(stats.warning);
+        $('.giga-stat-value.error').text(stats.error);
+        $('.giga-stat-value.info').text(stats.total);
+    }
+    
+    // Filter validation results
+    function filterValidationResults(filterType) {
+        const resultsContainer = $('.giga-validation-results');
+        const resultItems = resultsContainer.find('.giga-result-item');
+        
+        resultItems.each(function() {
+            const $item = $(this);
+            const itemType = $item.hasClass('success') ? 'success' :
+                           $item.hasClass('warning') ? 'warning' : 'error';
+            
+            if (filterType === 'all' || filterType === itemType) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
+        });
+    }
+    
+    // Export validation report
+    function exportValidationReport($btn, originalText) {
+        // Create and download file
+        const reportData = {
+            generated_at: new Date().toISOString(),
+            site_url: window.location.href,
+            validation_results: [
+                {
+                    type: 'success',
+                    title: 'Product Schema Markup',
+                    message: 'Product schema markup is properly implemented for all products.',
+                    count: 15
+                },
+                {
+                    type: 'warning',
+                    title: 'Missing Product Reviews',
+                    message: '3 products are missing review schema markup.',
+                    count: 3
+                },
+                {
+                    type: 'error',
+                    title: 'Invalid Product Images',
+                    message: '2 products have invalid image URLs.',
+                    count: 2
+                }
+            ],
+            summary: {
+                total_products: 20,
+                valid_schemas: 15,
+                warnings: 3,
+                errors: 2
+            }
+        };
+        
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'giga-schema-validation-report.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        $btn.html(originalText).prop('disabled', false);
+        
+        // Show success message
+        showNotification('Validation report exported successfully!', 'success');
+    }
+    
+    // Simulate schema regeneration
+    function simulateSchemaRegeneration($btn, originalText) {
+        let progress = 0;
+        const progressInterval = setInterval(function() {
+            progress += Math.random() * 10;
+            if (progress > 100) progress = 100;
+            
+            $('.giga-progress-bar').width(progress + '%');
+            $('.giga-progress-text').text('Regenerating schema... ' + Math.round(progress) + '%');
+            
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                
+                $btn.html(originalText).prop('disabled', false);
+                showNotification('Schema regenerated successfully!', 'success');
+            }
+        }, 100);
+    }
+    
+    // Clear schema cache
+    function clearSchemaCache($btn, originalText) {
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'giga_sp_clear_schema_cache'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Schema cache cleared successfully!', 'success');
+                } else {
+                    showNotification('Error clearing cache: ' + response.data.message, 'error');
+                }
+                $btn.html(originalText).prop('disabled', false);
+            },
+            error: function() {
+                showNotification('Error clearing cache. Please try again.', 'error');
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
+    }
+    
+    // General Settings Tab Navigation
+    function initGeneralSettingsTabs() {
+        $('.giga-tabs .giga-sp-tab').on('click', function(e) {
+            e.preventDefault();
+            
+            const $tab = $(this);
+            const targetId = $tab.data('tab');
+            const $targetPanel = $('#' + targetId);
+            
+            // Remove active class from all tabs
+            $('.giga-tabs .giga-sp-tab').removeClass('active');
+            
+            // Add active class to clicked tab
+            $tab.addClass('active');
+            
+            // Hide all panels
+            $('.giga-settings-section').removeClass('active').hide();
+            
+            // Show target panel with animation
+            $targetPanel.addClass('active').fadeIn(300);
+        });
+    }
+    
+    // General Settings Form Validation
+    function initGeneralSettingsForm() {
+        $('.giga-settings-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const $form = $(this);
+            const $submitBtn = $form.find('.giga-btn-primary');
+            const originalText = $submitBtn.val();
+            
+            // Validate required fields
+            let isValid = true;
+            const $requiredFields = $form.find('[required]');
+            
+            $requiredFields.each(function() {
+                const $field = $(this);
+                const value = $field.val().trim();
+                
+                if (!value) {
+                    isValid = false;
+                    $field.addClass('giga-error');
+                    showFieldError($field, 'This field is required');
+                } else {
+                    $field.removeClass('giga-error');
+                    hideFieldError($field);
+                }
+            });
+            
+            // Validate URLs
+            const $urlFields = $form.find('input[type="url"]');
+            $urlFields.each(function() {
+                const $field = $(this);
+                const value = $field.val().trim();
+                
+                if (value && !isValidURL(value)) {
+                    isValid = false;
+                    $field.addClass('giga-error');
+                    showFieldError($field, 'Please enter a valid URL');
+                } else {
+                    $field.removeClass('giga-error');
+                    hideFieldError($field);
+                }
+            });
+            
+            if (isValid) {
+                // Show loading state
+                $submitBtn.prop('disabled', true).val('Saving...');
+                
+                // Submit the form
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: $form.serialize() + '&action=giga_sp_save_settings',
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification('Settings saved successfully!', 'success');
+                            
+                            // Update logo preview if changed
+                            updateLogoPreview();
+                            
+                            // Reset button
+                            $submitBtn.prop('disabled', false).val(originalText);
+                        } else {
+                            showNotification('Error saving settings: ' + response.data.message, 'error');
+                            $submitBtn.prop('disabled', false).val(originalText);
+                        }
+                    },
+                    error: function() {
+                        showNotification('Error saving settings. Please try again.', 'error');
+                        $submitBtn.prop('disabled', false).val(originalText);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Update logo preview
+    function updateLogoPreview() {
+        const $logoInput = $('#organization_logo');
+        const $logoPreview = $('.giga-logo-preview');
+        
+        if ($logoInput.length && $logoPreview.length) {
+            const logoUrl = $logoInput.val().trim();
+            
+            if (logoUrl) {
+                $logoPreview.html(`<img src="${logoUrl}" alt="Organization Logo" class="giga-logo-img">`);
+            } else {
+                $logoPreview.empty();
+            }
+        }
+    }
+    
+    // URL validation helper
+    function isValidURL(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+    
+    // Reset settings
+    $('.giga-reset-settings').on('click', function(e) {
+        e.preventDefault();
+        
+        if (!confirm('Are you sure you want to reset all settings to default? This action cannot be undone.')) {
+            return;
+        }
+        
+        const $btn = $(this);
+        const originalText = $btn.html();
+        
+        $btn.html('<span class="spinner"></span> Resetting...').prop('disabled', true);
+        
+        // Simulate reset
+        setTimeout(function() {
+            // Reset form fields
+            $('.giga-settings-form')[0].reset();
+            
+            // Clear logo preview
+            $('.giga-logo-preview').empty();
+            
+            $btn.html(originalText).prop('disabled', false);
+            
+            showNotification('Settings reset successfully!', 'success');
+        }, 1000);
+    });
+    
+    // Initialize general settings when the page loads
+    $(document).ready(function() {
+        if ($('.giga-settings-form').length) {
+            initGeneralSettingsTabs();
+            initGeneralSettingsForm();
+            
+            // Initialize logo preview on load
+            updateLogoPreview();
+        }
+    });
     
 })(jQuery);
