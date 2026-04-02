@@ -614,68 +614,150 @@ if ( ! class_exists( 'Giga_SP_Admin' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				return;
 			}
-
+	
 			$rules = Giga_SP_Rules::get_rules();
 			$all_types = Giga_SP_Types::get_all_types();
 			$is_pro = class_exists( 'Giga_SP_License' ) && Giga_SP_License::is_pro();
 			?>
-			<div class="wrap">
-				<h1><?php esc_html_e( 'Auto-Generation Rules', 'giga-schema-pro' ); ?></h1>
-				<p><?php esc_html_e( 'Configure automatic schema generation rules. Rules are applied in order of priority.', 'giga-schema-pro' ); ?></p>
-
-				<table class="wp-list-table widefat fixed striped">
-					<thead>
-						<tr>
-							<th><?php esc_html_e( 'ID', 'giga-schema-pro' ); ?></th>
-							<th><?php esc_html_e( 'Schema Type', 'giga-schema-pro' ); ?></th>
-							<th><?php esc_html_e( 'Target', 'giga-schema-pro' ); ?></th>
-							<th><?php esc_html_e( 'Conditions', 'giga-schema-pro' ); ?></th>
-							<th><?php esc_html_e( 'Priority', 'giga-schema-pro' ); ?></th>
-							<th><?php esc_html_e( 'Status', 'giga-schema-pro' ); ?></th>
-							<th><?php esc_html_e( 'Actions', 'giga-schema-pro' ); ?></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ( $rules as $rule ) : ?>
-							<tr>
-								<td><?php echo esc_html( $rule['id'] ); ?></td>
-								<td><?php echo esc_html( $rule['schema_type'] ); ?></td>
-								<td><?php echo esc_html( $rule['target_type'] ); ?></td>
-								<td>
-									<?php
-									if ( empty( $rule['conditions'] ) ) {
-										esc_html_e( 'None', 'giga-schema-pro' );
-									} else {
-										echo esc_html( count( $rule['conditions'] ) . ' ' . _n( 'condition', 'conditions', count( $rule['conditions'] ), 'giga-schema-pro' ) );
-									}
-									?>
-								</td>
-								<td><?php echo esc_html( $rule['priority'] ); ?></td>
-								<td>
-									<?php if ( $rule['enabled'] ) : ?>
-										<span class="giga-sp-badge giga-sp-pass"><?php esc_html_e( 'Enabled', 'giga-schema-pro' ); ?></span>
-									<?php else : ?>
-										<span class="giga-sp-badge giga-sp-fail"><?php esc_html_e( 'Disabled', 'giga-schema-pro' ); ?></span>
+			<div class="giga-sp-admin">
+				<div class="giga-sp-container">
+					
+					<!-- Modern Header -->
+					<div class="giga-sp-dashboard-header">
+						<div class="giga-sp-dashboard-content">
+							<div class="giga-sp-header-main">
+								<div class="giga-sp-header-left">
+									<div class="giga-sp-header-icon">
+										<span class="dashicons dashicons-editor-ul"></span>
+									</div>
+									<div class="giga-sp-header-title">
+										<h1><?php esc_html_e( 'Auto-Generation Rules', 'giga-schema-pro' ); ?></h1>
+										<p class="giga-sp-header-subtitle"><?php esc_html_e( 'Configure automatic schema generation rules. Rules are applied in order of priority.', 'giga-schema-pro' ); ?></p>
+									</div>
+								</div>
+								<div class="giga-sp-header-actions">
+									<?php if ( ! $is_pro ) : ?>
+										<a href="#" class="giga-btn giga-btn-primary" onclick="window.location.href='?page=giga-schema-pro-settings'; return false;">
+											<span class="dashicons dashicons-star-filled"></span>
+											<?php esc_html_e( 'Upgrade to Pro', 'giga-schema-pro' ); ?>
+										</a>
 									<?php endif; ?>
-								</td>
-								<td>
+									<a href="#" class="giga-btn giga-btn-secondary" onclick="window.location.href='?page=giga-schema-pro-settings'; return false;">
+										<span class="dashicons dashicons-cog"></span>
+										<?php esc_html_e( 'Settings', 'giga-schema-pro' ); ?>
+									</a>
+								</div>
+							</div>
+						</div>
+					</div>
+	
+					<!-- Rules Management Section -->
+					<div class="giga-card">
+						<div class="giga-card-header">
+							<h3 class="giga-card-title">
+								<span class="dashicons dashicons-list-view"></span>
+								<?php esc_html_e( 'Active Rules', 'giga-schema-pro' ); ?>
+							</h3>
+						</div>
+						<div class="giga-card-body">
+							<?php if ( empty( $rules ) ) : ?>
+								<div class="giga-empty-state">
+									<div class="giga-empty-icon">📋</div>
+									<h4><?php esc_html_e( 'No rules configured yet', 'giga-schema-pro' ); ?></h4>
+									<p><?php esc_html_e( 'Create rules to automatically apply schema markup to your content based on conditions.', 'giga-schema-pro' ); ?></p>
 									<?php if ( $is_pro ) : ?>
-										<button type="button" class="button button-small" data-action="edit" data-rule-id="<?php echo esc_attr( $rule['id'] ); ?>"><?php esc_html_e( 'Edit', 'giga-schema-pro' ); ?></button>
-										<button type="button" class="button button-small" data-action="delete" data-rule-id="<?php echo esc_attr( $rule['id'] ); ?>"><?php esc_html_e( 'Delete', 'giga-schema-pro' ); ?></button>
+										<button type="button" class="giga-btn giga-btn-primary" id="giga-sp-add-rule">
+											<span class="dashicons dashicons-plus"></span>
+											<?php esc_html_e( 'Create First Rule', 'giga-schema-pro' ); ?>
+										</button>
 									<?php else : ?>
-										<span class="description"><?php esc_html_e( 'Pro feature', 'giga-schema-pro' ); ?></span>
+										<a href="#" class="giga-btn giga-btn-primary" onclick="window.location.href='?page=giga-schema-pro-settings'; return false;">
+											<span class="dashicons dashicons-star-filled"></span>
+											<?php esc_html_e( 'Upgrade to Pro to create rules', 'giga-schema-pro' ); ?>
+										</a>
 									<?php endif; ?>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-
-				<?php if ( $is_pro ) : ?>
-					<button type="button" class="button button-primary" id="giga-sp-add-rule"><?php esc_html_e( 'Add New Rule', 'giga-schema-pro' ); ?></button>
-				<?php else : ?>
-					<p><a href="#" class="button"><?php esc_html_e( 'Upgrade to Pro to create custom rules', 'giga-schema-pro' ); ?></a></p>
-				<?php endif; ?>
+								</div>
+							<?php else : ?>
+								<div class="giga-rules-container">
+									<div class="giga-rules-list">
+										<?php foreach ( $rules as $rule ) : ?>
+											<div class="giga-rule-card <?php echo $rule['enabled'] ? 'active' : ''; ?>">
+												<div class="giga-rule-header">
+													<div class="giga-rule-info">
+														<h4 class="giga-rule-title"><?php echo esc_html( $rule['schema_type'] ); ?></h4>
+														<div class="giga-rule-meta">
+															<span class="giga-rule-target"><?php echo esc_html( $rule['target_type'] ); ?></span>
+															<span class="giga-rule-priority">Priority: <?php echo esc_html( $rule['priority'] ); ?></span>
+														</div>
+													</div>
+													<div class="giga-rule-status">
+														<?php if ( $rule['enabled'] ) : ?>
+															<span class="giga-sp-badge giga-sp-pass">✓ Enabled</span>
+														<?php else : ?>
+															<span class="giga-sp-badge giga-sp-fail">✗ Disabled</span>
+														<?php endif; ?>
+													</div>
+												</div>
+												<div class="giga-rule-conditions">
+													<div class="giga-rule-conditions-title">
+														<span class="dashicons dashicons-filter"></span>
+														<?php esc_html_e( 'Conditions', 'giga-schema-pro' ); ?>
+													</div>
+													<div class="giga-rule-conditions-content">
+														<?php if ( empty( $rule['conditions'] ) ) : ?>
+															<span class="giga-rule-no-conditions"><?php esc_html_e( 'No conditions - applies to all content of this type', 'giga-schema-pro' ); ?></span>
+														<?php else : ?>
+															<div class="giga-rule-conditions-list">
+																<?php
+																foreach ( $rule['conditions'] as $condition ) :
+																	$condition_text = isset( $condition['taxonomy'] ) ?
+																		sprintf( '%s: %s', $condition['taxonomy'], implode(', ', $condition['terms'] ) ) :
+																		sprintf( '%s: %s', $condition['field'], $condition['value'] );
+																?>
+																	<div class="giga-rule-condition">
+																		<span class="dashicons dashicons-check"></span>
+																		<?php echo esc_html( $condition_text ); ?>
+																	</div>
+																<?php endforeach; ?>
+															</div>
+														<?php endif; ?>
+													</div>
+												</div>
+												<div class="giga-rule-actions">
+													<?php if ( $is_pro ) : ?>
+														<button type="button" class="giga-btn giga-btn-secondary" data-action="edit" data-rule-id="<?php echo esc_attr( $rule['id'] ); ?>">
+															<span class="dashicons dashicons-edit"></span>
+															<?php esc_html_e( 'Edit', 'giga-schema-pro' ); ?>
+														</button>
+														<button type="button" class="giga-btn giga-btn-secondary" data-action="delete" data-rule-id="<?php echo esc_attr( $rule['id'] ); ?>">
+															<span class="dashicons dashicons-trash"></span>
+															<?php esc_html_e( 'Delete', 'giga-schema-pro' ); ?>
+														</button>
+													<?php else : ?>
+														<span class="giga-rule-pro-notice"><?php esc_html_e( 'Pro feature', 'giga-schema-pro' ); ?></span>
+													<?php endif; ?>
+												</div>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								</div>
+							<?php endif; ?>
+						</div>
+					</div>
+	
+					<?php if ( $is_pro ) : ?>
+						<div class="giga-card">
+							<div class="giga-card-body">
+								<div style="text-align: center;">
+									<button type="button" class="giga-btn giga-btn-primary" id="giga-sp-add-rule">
+										<span class="dashicons dashicons-plus"></span>
+										<?php esc_html_e( 'Add New Rule', 'giga-schema-pro' ); ?>
+									</button>
+								</div>
+							</div>
+						</div>
+					<?php endif; ?>
+				</div>
 			</div>
 			<?php
 		}
