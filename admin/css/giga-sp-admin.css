@@ -116,7 +116,8 @@
 .giga-tabs,
 .giga-sp-tabs {
 	display: flex;
-	flex-wrap: wrap;       /* prevent overflow on narrow screens */
+	flex-wrap: wrap;
+	/* prevent overflow on narrow screens */
 	gap: 4px;
 	background: #fff;
 	border-radius: var(--giga-radius);
@@ -128,7 +129,8 @@
 
 .giga-tabs .giga-sp-tab,
 .giga-sp-tabs .giga-sp-tab {
-	flex: 1 1 auto;        /* grow but also shrink so they never overlap */
+	flex: 1 1 auto;
+	/* grow but also shrink so they never overlap */
 	min-width: 100px;
 	padding: 10px 16px;
 	background: transparent;
@@ -188,13 +190,22 @@
 	right: -50%;
 	width: 200%;
 	height: 200%;
-	background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+	background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
 	animation: giga-pulse 4s ease-in-out infinite;
 }
 
 @keyframes giga-pulse {
-	0%, 100% { transform: scale(0.8); opacity: 0.5; }
-	50% { transform: scale(1.2); opacity: 0.8; }
+
+	0%,
+	100% {
+		transform: scale(0.8);
+		opacity: 0.5;
+	}
+
+	50% {
+		transform: scale(1.2);
+		opacity: 0.8;
+	}
 }
 
 .giga-sp-dashboard-content {
@@ -403,11 +414,13 @@
 .giga-card-title {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	gap: 12px;
 	margin: 0;
 	font-size: 16px;
 	font-weight: 600;
 	color: var(--giga-gray-900);
+	text-align: center;
 }
 
 .giga-card-title .dashicons {
@@ -1344,7 +1357,7 @@
 	.giga-stats-grid {
 		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 	}
-	
+
 	.giga-card-grid {
 		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 	}
@@ -1354,69 +1367,69 @@
 	.giga-sp-container {
 		padding: 16px;
 	}
-	
+
 	.giga-stats-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.giga-card-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.giga-schema-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.giga-action-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.giga-metrics-grid {
 		grid-template-columns: repeat(2, 1fr);
 	}
-	
+
 	.giga-sp-header-main {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 16px;
 	}
-	
+
 	.giga-sp-header-actions {
 		flex-wrap: wrap;
 		width: 100%;
 	}
-	
+
 	.giga-sp-header-actions .giga-btn {
 		flex: 1;
 		min-width: 120px;
 	}
-	
+
 	.giga-tabs {
 		flex-direction: column;
 		gap: 4px;
 	}
-	
+
 	.giga-tab {
 		text-align: center;
 		padding: 16px;
 	}
-	
+
 	.giga-rule-header {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 12px;
 	}
-	
+
 	.giga-rule-actions {
 		width: 100%;
 		justify-content: flex-start;
 	}
-	
+
 	.giga-condition-item {
 		flex-direction: column;
 		align-items: stretch;
 	}
-	
+
 	.giga-condition-item select,
 	.giga-condition-item input {
 		margin-bottom: 8px;
@@ -1427,53 +1440,53 @@
 	.giga-stats-grid {
 		gap: 12px;
 	}
-	
+
 	.giga-stat-card {
 		padding: 16px;
 	}
-	
+
 	.giga-stat-number {
 		font-size: 24px;
 	}
-	
+
 	.giga-card {
 		padding: 16px;
 	}
-	
+
 	.giga-card-header {
 		padding: 16px;
 	}
-	
+
 	.giga-card-body {
 		padding: 16px;
 	}
-	
+
 	.giga-schema-card {
 		padding: 16px;
 	}
-	
+
 	.giga-schema-icon {
 		width: 48px;
 		height: 48px;
 		font-size: 20px;
 	}
-	
+
 	.giga-schema-title {
 		font-size: 14px;
 	}
-	
+
 	.giga-schema-description {
 		font-size: 12px;
 	}
-	
+
 	.giga-metrics-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.giga-header-actions {
 		flex-direction: column;
 	}
-	
+
 	.giga-btn {
 		width: 100%;
 		text-align: center;
@@ -1494,7 +1507,9 @@
 }
 
 @keyframes spin {
-	to { transform: rotate(360deg); }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .giga-loading {
@@ -1524,8 +1539,13 @@
 }
 
 @keyframes loading {
-	0% { background-position: 200% 0; }
-	100% { background-position: -200% 0; }
+	0% {
+		background-position: 200% 0;
+	}
+
+	100% {
+		background-position: -200% 0;
+	}
 }
 
 /* ----------------------------------------------------------
@@ -1536,7 +1556,7 @@
 		background: #1a1a1a;
 		color: #e5e5e5;
 	}
-	
+
 	.giga-card,
 	.giga-schema-card,
 	.giga-stat-card {
@@ -1544,12 +1564,12 @@
 		border-color: #404040;
 		color: #e5e5e5;
 	}
-	
+
 	.giga-card-header {
 		background: #363636;
 		border-bottom-color: #404040;
 	}
-	
+
 	.giga-form-input,
 	.giga-form-select,
 	.giga-form-textarea {
@@ -1557,42 +1577,42 @@
 		border-color: #404040;
 		color: #e5e5e5;
 	}
-	
+
 	.giga-form-input:focus,
 	.giga-form-select:focus,
 	.giga-form-textarea:focus {
 		border-color: var(--giga-primary);
 		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 	}
-	
+
 	.giga-action-item {
 		background: #2d2d2d;
 		border-color: #404040;
 	}
-	
+
 	.giga-metric-item {
 		background: #2d2d2d;
 	}
-	
+
 	.giga-progress-bar {
 		background: #404040;
 	}
-	
+
 	.giga-activity-item {
 		background: #2d2d2d;
 		border-color: #404040;
 	}
-	
+
 	.giga-rule-card {
 		background: #2d2d2d;
 		border-color: #404040;
 	}
-	
+
 	.giga-condition-builder {
 		background: #363636;
 		border-color: #404040;
 	}
-	
+
 	.giga-skeleton {
 		background: linear-gradient(90deg, #404040 25%, #505050 50%, #404040 75%);
 	}
@@ -1602,6 +1622,7 @@
    Print Styles
    ---------------------------------------------------------- */
 @media print {
+
 	.giga-sp-admin .giga-sp-header-actions,
 	.giga-sp-admin .giga-tabs,
 	.giga-sp-admin .giga-card-footer,
@@ -1609,13 +1630,13 @@
 	.giga-sp-admin .giga-btn-icon {
 		display: none;
 	}
-	
+
 	.giga-sp-admin .giga-card,
 	.giga-sp-admin .giga-schema-card {
 		break-inside: avoid;
 		page-break-inside: avoid;
 	}
-	
+
 	.giga-sp-admin {
 		background: white;
 		color: black;
@@ -1630,6 +1651,7 @@
 		opacity: 0;
 		transform: translateY(20px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -1645,6 +1667,7 @@
 		opacity: 0;
 		transform: translateX(-20px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateX(0);
@@ -1658,7 +1681,9 @@
 /* ----------------------------------------------------------
    Legacy Styles (for backward compatibility)
    ---------------------------------------------------------- */
-.giga-sp-meta-box { padding: 10px; }
+.giga-sp-meta-box {
+	padding: 10px;
+}
 
 .giga-sp-dashboard {
 	max-width: 1200px;
@@ -1726,7 +1751,7 @@
 	border-radius: 6px;
 	padding: 20px 16px;
 	text-align: center;
-	box-shadow: 0 1px 3px rgba(0,0,0,.04);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
 }
 
 .giga-sp-stat-number {
@@ -1751,16 +1776,28 @@
 	flex-wrap: wrap;
 }
 
-.giga-sp-dash-col { display: flex; flex-direction: column; gap: 20px; }
-.giga-sp-dash-col-main { flex: 1 1 55%; min-width: 320px; }
-.giga-sp-dash-col-side { flex: 1 1 30%; min-width: 260px; }
+.giga-sp-dash-col {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.giga-sp-dash-col-main {
+	flex: 1 1 55%;
+	min-width: 320px;
+}
+
+.giga-sp-dash-col-side {
+	flex: 1 1 30%;
+	min-width: 260px;
+}
 
 .giga-sp-dash-card {
 	background: #fff;
 	border: 1px solid #e2e5e7;
 	border-radius: 6px;
 	padding: 20px 22px;
-	box-shadow: 0 1px 3px rgba(0,0,0,.04);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
 }
 
 .giga-sp-card-title {
@@ -1804,7 +1841,9 @@
 	border-bottom: 1px solid #f8f8f8;
 }
 
-.giga-sp-check-item:last-child { border-bottom: none; }
+.giga-sp-check-item:last-child {
+	border-bottom: none;
+}
 
 .giga-sp-check-item .dashicons {
 	font-size: 18px;
@@ -1814,11 +1853,21 @@
 	margin-top: 1px;
 }
 
-.giga-sp-check-done .dashicons { color: #46b450; }
-.giga-sp-check-todo .dashicons { color: #dba617; }
+.giga-sp-check-done .dashicons {
+	color: #46b450;
+}
 
-.giga-sp-check-done span:last-child { color: #3c434a; }
-.giga-sp-check-todo span:last-child { color: #646970; }
+.giga-sp-check-todo .dashicons {
+	color: #dba617;
+}
+
+.giga-sp-check-done span:last-child {
+	color: #3c434a;
+}
+
+.giga-sp-check-todo span:last-child {
+	color: #646970;
+}
 
 /* ----------------------------------------------------------
    Schema Type Chips
@@ -1863,7 +1912,9 @@
 	border-bottom: 1px solid #f8f8f8;
 }
 
-.giga-sp-quick-links li:last-child { border-bottom: none; }
+.giga-sp-quick-links li:last-child {
+	border-bottom: none;
+}
 
 .giga-sp-quick-links a {
 	display: flex;
@@ -1876,7 +1927,9 @@
 	transition: color 0.15s;
 }
 
-.giga-sp-quick-links a:hover { color: #135e96; }
+.giga-sp-quick-links a:hover {
+	color: #135e96;
+}
 
 .giga-sp-quick-links .dashicons {
 	font-size: 16px;
@@ -1903,7 +1956,9 @@
 	font-size: 13px;
 }
 
-.giga-sp-env-list li:last-child { border-bottom: none; }
+.giga-sp-env-list li:last-child {
+	border-bottom: none;
+}
 
 .giga-sp-env-label {
 	color: #3c434a;
@@ -2521,20 +2576,20 @@
 		text-align: center;
 		gap: 12px;
 	}
-	
+
 	.giga-tabs {
 		flex-direction: column;
 		gap: 4px;
 	}
-	
+
 	.giga-tabs .giga-sp-tab {
 		min-width: auto;
 	}
-	
+
 	.giga-form-actions {
 		flex-direction: column;
 	}
-	
+
 	.giga-actions-content .giga-btn {
 		width: 100%;
 	}
@@ -2840,11 +2895,11 @@
 	.giga-validation-stats {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.giga-validation-actions {
 		flex-direction: column;
 	}
-	
+
 	.giga-validation-actions .giga-btn {
 		min-width: 160px;
 		width: 100%;
@@ -2874,6 +2929,7 @@
 		opacity: 0;
 		transform: translateY(10px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -3057,38 +3113,38 @@
 	.giga-settings-header {
 		padding: 20px;
 	}
-	
+
 	.giga-settings-form {
 		padding: 20px;
 	}
-	
+
 	.giga-settings-card {
 		padding: 20px;
 	}
-	
+
 	.giga-card-header {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 8px;
 	}
-	
+
 	.giga-form-actions {
 		flex-direction: column;
 	}
-	
+
 	.giga-form-actions .giga-btn {
 		width: 100%;
 	}
-	
+
 	.giga-tabs {
 		flex-direction: column;
 		gap: 4px;
 	}
-	
+
 	.giga-tabs .giga-sp-tab {
 		min-width: auto;
 	}
-	
+
 	/* Rules Management UI Styles */
 	.giga-rule-card {
 		background: white;
@@ -3100,45 +3156,45 @@
 		overflow: hidden;
 		margin-bottom: 16px;
 	}
-	
+
 	.giga-rule-card:hover {
 		transform: translateY(-2px);
 		box-shadow: var(--giga-shadow-lg);
 		border-color: var(--giga-primary);
 	}
-	
+
 	.giga-rule-card:hover::before {
 		opacity: 1;
 	}
-	
+
 	.giga-rule-card.active::before {
 		opacity: 1;
 	}
-	
+
 	.giga-rule-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 16px;
 	}
-	
+
 	.giga-rule-info {
 		flex: 1;
 	}
-	
+
 	.giga-rule-title {
 		margin: 0 0 8px 0;
 		font-size: 16px;
 		font-weight: 600;
 		color: var(--giga-gray-900);
 	}
-	
+
 	.giga-rule-meta {
 		display: flex;
 		gap: 12px;
 		flex-wrap: wrap;
 	}
-	
+
 	.giga-rule-target,
 	.giga-rule-priority {
 		font-size: 12px;
@@ -3147,19 +3203,19 @@
 		padding: 2px 8px;
 		border-radius: 12px;
 	}
-	
+
 	.giga-rule-status {
 		display: flex;
 		align-items: center;
 	}
-	
+
 	.giga-rule-conditions {
 		margin-bottom: 16px;
 		padding: 16px;
 		background: var(--giga-gray-50);
 		border-radius: var(--giga-radius-sm);
 	}
-	
+
 	.giga-rule-conditions-title {
 		display: flex;
 		align-items: center;
@@ -3169,35 +3225,35 @@
 		font-weight: 500;
 		color: var(--giga-gray-700);
 	}
-	
+
 	.giga-rule-conditions-content {
 		font-size: 14px;
 		color: var(--giga-gray-600);
 	}
-	
+
 	.giga-rule-no-conditions {
 		font-style: italic;
 		color: var(--giga-gray-500);
 	}
-	
+
 	.giga-rule-conditions-list {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
 	}
-	
+
 	.giga-rule-condition {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		padding: 4px 0;
 	}
-	
+
 	.giga-rule-condition .dashicons {
 		color: var(--giga-primary);
 		font-size: 14px;
 	}
-	
+
 	.giga-rule-actions {
 		display: flex;
 		gap: 8px;
@@ -3205,32 +3261,32 @@
 		padding-top: 16px;
 		border-top: 1px solid var(--giga-gray-200);
 	}
-	
+
 	.giga-rule-pro-notice {
 		font-size: 12px;
 		color: var(--giga-gray-500);
 		font-style: italic;
 	}
-	
+
 	/* Empty State Styles */
 	.giga-empty-state {
 		text-align: center;
 		padding: 48px 24px;
 	}
-	
+
 	.giga-empty-icon {
 		font-size: 48px;
 		margin-bottom: 16px;
 		opacity: 0.5;
 	}
-	
+
 	.giga-empty-state h4 {
 		margin: 0 0 8px 0;
 		font-size: 20px;
 		font-weight: 600;
 		color: var(--giga-gray-900);
 	}
-	
+
 	.giga-empty-state p {
 		margin: 0 0 24px 0;
 		font-size: 14px;
