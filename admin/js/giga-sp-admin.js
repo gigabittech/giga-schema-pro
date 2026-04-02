@@ -1,3 +1,63 @@
+/**
+ * Chart.js Color Adaptation
+ * Gets current theme colors dynamically for proper dark/light mode support
+ */
+function getChartColors() {
+    const computedStyle = getComputedStyle(document.documentElement);
+    return {
+        textColor: computedStyle.getPropertyValue('--color-text-primary').trim(),
+        gridColor: computedStyle.getPropertyValue('--color-border-tertiary').trim(),
+        backgroundColor: computedStyle.getPropertyValue('--color-background-primary').trim(),
+        primaryColor: computedStyle.getPropertyValue('--color-brand-primary').trim(),
+        successColor: computedStyle.getPropertyValue('--color-success').trim(),
+        warningColor: computedStyle.getPropertyValue('--color-warning').trim(),
+        dangerColor: computedStyle.getPropertyValue('--color-danger').trim()
+    };
+}
+
+/**
+ * Initialize Chart.js with theme-aware colors
+ * Usage: const chart = new Chart(ctx, getChartConfig());
+ */
+function getChartConfig(type, data, options = {}) {
+    const colors = getChartColors();
+    const defaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: colors.textColor
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    color: colors.gridColor
+                },
+                ticks: {
+                    color: colors.textColor
+                }
+            },
+            y: {
+                grid: {
+                    color: colors.gridColor
+                },
+                ticks: {
+                    color: colors.textColor
+                }
+            }
+        }
+    };
+    
+    return {
+        type: type,
+        data: data,
+        options: { ...defaultOptions, ...options }
+    };
+}
+
 (function($) {
     'use strict';
     
@@ -412,7 +472,7 @@
                 </div>
                 <div class="giga-stat-card">
                     <div class="giga-stat-header">
-                        <div class="giga-stat-icon" style="background: #ef4444; color: white;">✕</div>
+                        <div class="giga-stat-icon" style="background: var(--color-danger); color: var(--color-background-primary);">✕</div>
                         <div class="giga-stat-content">
                             <h3>${results.failed}</h3>
                             <p>Failed</p>
@@ -421,7 +481,7 @@
                 </div>
                 <div class="giga-stat-card">
                     <div class="giga-stat-header">
-                        <div class="giga-stat-icon" style="background: #f59e0b; color: white;">⚠</div>
+                        <div class="giga-stat-icon" style="background: var(--color-warning); color: var(--color-background-primary);">⚠</div>
                         <div class="giga-stat-content">
                             <h3>${results.warnings}</h3>
                             <p>Warnings</p>
