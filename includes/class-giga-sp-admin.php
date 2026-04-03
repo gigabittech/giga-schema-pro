@@ -2144,7 +2144,7 @@ if (!class_exists('Giga_SP_Admin')) {
 						</button>
 					</div>
 
-					<div id="organization-tab" class="giga-tab-content giga-settings-section">
+					<div id="organization-tab" class="giga-tab-content giga-settings-section active">
 						<div class="giga-settings-grid">
 							<div class="giga-settings-column">
 								<div class="giga-settings-card">
@@ -2258,7 +2258,7 @@ if (!class_exists('Giga_SP_Admin')) {
 						</div>
 					</div>
 
-					<div id="social-tab" class="giga-tab-content giga-settings-section" style="display: none;">
+					<div id="social-tab" class="giga-tab-content giga-settings-section">
 						<div class="giga-settings-grid">
 							<div class="giga-settings-column">
 								<div class="giga-settings-card">
