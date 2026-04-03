@@ -17,6 +17,12 @@ if (!class_exists('Giga_SP_Admin')) {
 			add_action('wp_ajax_giga_sp_save_rule', [$this, 'ajax_save_rule']);
 			add_action('wp_ajax_giga_sp_delete_rule', [$this, 'ajax_delete_rule']);
 			add_action('wp_ajax_giga_sp_toggle_rule', [$this, 'ajax_toggle_rule']);
+			
+			// AJAX: schema type selection and configuration
+			add_action('wp_ajax_giga_sp_load_selected_schemas', [$this, 'ajax_load_selected_schemas']);
+			add_action('wp_ajax_giga_sp_save_schema_selection', [$this, 'ajax_save_schema_selection']);
+			add_action('wp_ajax_giga_sp_get_schema_config', [$this, 'ajax_get_schema_config']);
+			add_action('wp_ajax_giga_sp_save_schema_config', [$this, 'ajax_save_schema_config']);
 		}
 
 		/**
@@ -879,9 +885,7 @@ if (!class_exists('Giga_SP_Admin')) {
 															<?php esc_html_e('Delete', 'giga-schema-pro'); ?>
 														</button>
 													<?php else: ?>
-														<span
-															class="giga-rule-pro-notice"><?php esc_html_e('Pro feature', 'giga-schema-pro'); ?></span>
-													<?php endif; ?>
+														<?php endif; ?>
 												</div>
 											</div>
 										<?php endforeach; ?>
@@ -1015,8 +1019,8 @@ if (!class_exists('Giga_SP_Admin')) {
 
 					<!-- All Types Grid -->
 					<div id="all-types" class="giga-panel">
-						<div class="giga-schema-grid">
-							<?php
+							<div class="giga-schema-grid">
+								<?php
 							// Show all types with free/pro distinction
 							$all_schema_types = array_merge(
 								array_map(function ($type) {
@@ -1045,11 +1049,6 @@ if (!class_exists('Giga_SP_Admin')) {
 									<div class="giga-schema-footer">
 										<span
 											class="giga-schema-badge <?php echo esc_attr($badge_class); ?>"><?php echo esc_html($badge_text); ?></span>
-										<?php if ($is_free || $is_pro): ?>
-											<button class="giga-btn-icon giga-schema-toggle">
-												<span class="dashicons dashicons-plus"></span>
-											</button>
-										<?php endif; ?>
 									</div>
 								</div>
 							<?php endforeach; ?>
@@ -1072,9 +1071,6 @@ if (!class_exists('Giga_SP_Admin')) {
 									</p>
 									<div class="giga-schema-footer">
 										<span class="giga-schema-badge free">Free</span>
-										<button class="giga-btn-icon giga-schema-toggle">
-											<span class="dashicons dashicons-plus"></span>
-										</button>
 									</div>
 								</div>
 							<?php endforeach; ?>
@@ -1098,9 +1094,6 @@ if (!class_exists('Giga_SP_Admin')) {
 										</p>
 										<div class="giga-schema-footer">
 											<span class="giga-schema-badge pro">Pro</span>
-											<button class="giga-btn-icon giga-schema-toggle">
-												<span class="dashicons dashicons-plus"></span>
-											</button>
 										</div>
 									</div>
 								<?php endforeach; ?>
@@ -1158,9 +1151,6 @@ if (!class_exists('Giga_SP_Admin')) {
 										<div class="giga-schema-footer">
 											<span
 												class="giga-schema-badge <?php echo esc_attr($badge_class); ?>"><?php echo esc_html($badge_text); ?></span>
-											<button class="giga-btn-icon giga-schema-toggle">
-												<span class="dashicons dashicons-plus"></span>
-											</button>
 										</div>
 									</div>
 									<?php
@@ -2583,17 +2573,149 @@ if (!class_exists('Giga_SP_Admin')) {
 				</div>
 			<?php endif; ?>
 
-			<div class="giga-validation-actions">
-				<button type="button" class="giga-btn giga-btn-secondary" id="giga-rerun-validation">
-					<span class="dashicons dashicons-update"></span>
-					<?php esc_html_e('Re-run Validation', 'giga-schema-pro'); ?>
-				</button>
-				<button type="button" class="giga-btn giga-btn-secondary" id="giga-export-validation">
-					<span class="dashicons dashicons-download"></span>
-					<?php esc_html_e('Export Report', 'giga-schema-pro'); ?>
-				</button>
-			</div>
+				<div class="giga-validation-actions">
+					<button type="button" class="giga-btn giga-btn-secondary" id="giga-rerun-validation">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e('Re-run Validation', 'giga-schema-pro'); ?>
+					</button>
+					<button type="button" class="giga-btn giga-btn-secondary" id="giga-export-validation">
+						<span class="dashicons dashicons-download"></span>
+						<?php esc_html_e('Export Report', 'giga-schema-pro'); ?>
+					</button>
+				</div>
 			<?php
+		}
+		
+		/**
+		 * AJAX: Load previously selected schemas
+		 *
+		 * @since 1.0.0
+		 */
+		public function ajax_load_selected_schemas()
+		{
+			check_ajax_referer('giga_sp_admin_nonce', 'nonce');
+			if (!current_user_can('manage_options')) {
+				wp_send_json_error(['message' => __('Permission denied.', 'giga-schema-pro')]);
+			}
+			
+			// Get saved selected schemas
+			$schemas = get_option('giga_sp_selected_schemas', []);
+			
+			wp_send_json_success([
+				'schemas' => $schemas
+			]);
+		}
+		
+		/**
+		 * AJAX: Save schema type selection
+		 *
+		 * @since 1.0.0
+		 */
+		public function ajax_save_schema_selection()
+		{
+			check_ajax_referer('giga_sp_admin_nonce', 'nonce');
+			if (!current_user_can('manage_options')) {
+				wp_send_json_error(['message' => __('Permission denied.', 'giga-schema-pro')]);
+			}
+			
+			$schemas = isset($_POST['schemas']) ? array_map('sanitize_text_field', wp_unslash($_POST['schemas'])) : [];
+			
+			// Save selected schemas
+			update_option('giga_sp_selected_schemas', $schemas);
+			
+			self::log_activity(
+				sprintf(
+					/* translators: %d: number of schemas */
+					__('Schema selection updated: %d types selected', 'giga-schema-pro'),
+					count($schemas)
+				),
+				'dashicons-category',
+				'giga-sp-pass',
+				__('Saved', 'giga-schema-pro')
+			);
+			
+			wp_send_json_success([
+				'message' => __('Schema selection saved successfully.', 'giga-schema-pro'),
+				'count' => count($schemas)
+			]);
+		}
+		
+		/**
+		 * AJAX: Get schema configuration
+		 *
+		 * @since 1.0.0
+		 */
+		public function ajax_get_schema_config()
+		{
+			check_ajax_referer('giga_sp_admin_nonce', 'nonce');
+			if (!current_user_can('manage_options')) {
+				wp_send_json_error(['message' => __('Permission denied.', 'giga-schema-pro')]);
+			}
+			
+			$schema_type = isset($_POST['schema_type']) ? sanitize_text_field(wp_unslash($_POST['schema_type'])) : '';
+			
+			if (empty($schema_type)) {
+				wp_send_json_error(['message' => __('Schema type is required.', 'giga-schema-pro')]);
+			}
+			
+			// Get saved configuration for this schema type
+			$all_configs = get_option('giga_sp_schema_configs', []);
+			$config = isset($all_configs[$schema_type]) ? $all_configs[$schema_type] : [];
+			
+			wp_send_json_success([
+				'schema_type' => $schema_type,
+				'config' => $config
+			]);
+		}
+		
+		/**
+		 * AJAX: Save schema configuration
+		 *
+		 * @since 1.0.0
+		 */
+		public function ajax_save_schema_config()
+		{
+			check_ajax_referer('giga_sp_admin_nonce', 'nonce');
+			if (!current_user_can('manage_options')) {
+				wp_send_json_error(['message' => __('Permission denied.', 'giga-schema-pro')]);
+			}
+			
+			$schema_type = isset($_POST['schema_type']) ? sanitize_text_field(wp_unslash($_POST['schema_type'])) : '';
+			$config = isset($_POST['config']) && is_array($_POST['config']) ? $_POST['config'] : [];
+			
+			if (empty($schema_type)) {
+				wp_send_json_error(['message' => __('Schema type is required.', 'giga-schema-pro')]);
+			}
+			
+			// Sanitize configuration
+			$sanitized_config = [];
+			foreach ($config as $key => $value) {
+				if (is_array($value)) {
+					$sanitized_config[$key] = array_map('sanitize_text_field', $value);
+				} else {
+					$sanitized_config[$key] = sanitize_text_field($value);
+				}
+			}
+			
+			// Save configuration
+			$all_configs = get_option('giga_sp_schema_configs', []);
+			$all_configs[$schema_type] = $sanitized_config;
+			update_option('giga_sp_schema_configs', $all_configs);
+			
+			self::log_activity(
+				sprintf(
+					/* translators: %s: schema type name */
+					__('Schema configuration saved: %s', 'giga-schema-pro'),
+					$schema_type
+				),
+				'dashicons-admin-generic',
+				'giga-sp-pass',
+				__('Saved', 'giga-schema-pro')
+			);
+			
+			wp_send_json_success([
+				'message' => __('Schema configuration saved successfully.', 'giga-schema-pro')
+			]);
 		}
 	}
 }

@@ -97,9 +97,6 @@ function getChartConfig(type, data, options = {}) {
         // Initialize rule management
         initRuleManagement();
         
-        // Initialize schema type selection
-        initSchemaSelection();
-        
         // Initialize WooCommerce-specific functionality
         initWooCommerceTabs();
         initWooCommerceValidation();
@@ -602,39 +599,6 @@ function getChartConfig(type, data, options = {}) {
         
         $('body').append($modal);
         openModal($modal);
-    }
-    
-    // Schema Type Selection
-    function initSchemaSelection() {
-        $('.giga-schema-card').on('click', function() {
-            const $card = $(this);
-            const schemaType = $card.data('schema-type');
-            
-            // Toggle selection
-            $card.toggleClass('selected');
-            
-            // Update selection counter
-            updateSchemaSelectionCounter();
-        });
-        
-        $('.giga-select-all').on('click', function() {
-            $('.giga-schema-card').addClass('selected');
-            updateSchemaSelectionCounter();
-        });
-        
-        $('.giga-select-none').on('click', function() {
-            $('.giga-schema-card').removeClass('selected');
-            updateSchemaSelectionCounter();
-        });
-    }
-    
-    function updateSchemaSelectionCounter() {
-        const selectedCount = $('.giga-schema-card.selected').length;
-        const $counter = $('.giga-selection-counter');
-        
-        if ($counter.length) {
-            $counter.text(selectedCount);
-        }
     }
     
     // WooCommerce Settings Specific Functions
