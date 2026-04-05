@@ -2529,10 +2529,31 @@ if (!class_exists('Giga_SP_Admin')) {
 			wp_nonce_field('giga_sp_meta_nonce', 'giga_sp_meta_nonce_field');
 			$disabled = get_post_meta($post->ID, '_giga_sp_disabled_types', true) ?: [];
 			$custom = get_post_meta($post->ID, '_giga_sp_custom_json', true) ?: '';
-
+	
 			echo '<p><strong>' . esc_html__('Disable specific schemas for this page:', 'giga-schema-pro') . '</strong><br>';
-			echo '<input type="checkbox" name="giga_sp_disable[]" value="Article" ' . (in_array('Article', $disabled) ? 'checked' : '') . '> Article<br>';
-			echo '<input type="checkbox" name="giga_sp_disable[]" value="Product" ' . (in_array('Product', $disabled) ? 'checked' : '') . '> Product<br>';
+	
+			// Show schema options based on post type
+			switch ($post->post_type) {
+				case 'post':
+					echo '<input type="checkbox" name="giga_sp_disable[]" value="Article" ' . (in_array('Article', $disabled) ? 'checked' : '') . '> Article<br>';
+					break;
+					
+				case 'page':
+					echo '<input type="checkbox" name="giga_sp_disable[]" value="WebPage" ' . (in_array('WebPage', $disabled) ? 'checked' : '') . '> WebPage<br>';
+					break;
+					
+				case 'product':
+					echo '<input type="checkbox" name="giga_sp_disable[]" value="Product" ' . (in_array('Product', $disabled) ? 'checked' : '') . '> Product<br>';
+					break;
+					
+				default:
+					// For other post types, show relevant schema types
+					if ($post->post_type === 'post') {
+						echo '<input type="checkbox" name="giga_sp_disable[]" value="Article" ' . (in_array('Article', $disabled) ? 'checked' : '') . '> Article<br>';
+					}
+					echo '<input type="checkbox" name="giga_sp_disable[]" value="Product" ' . (in_array('Product', $disabled) ? 'checked' : '') . '> Product<br>';
+			}
+			
 			echo '</p>';
 
 			if (class_exists('Giga_SP_License') && Giga_SP_License::is_pro()) {

@@ -9,7 +9,7 @@ if ( ! class_exists( 'Giga_SP_Type_Article' ) ) {
 			$post = $this->get_post();
 			if ( ! $post || ! is_a( $post, 'WP_Post' ) ) return [];
 
-			return [
+			$schema = [
 				'@context' => 'https://schema.org/',
 				'@type' => 'Article',
 				'headline' => get_the_title( $post ),
@@ -25,6 +25,20 @@ if ( ! class_exists( 'Giga_SP_Type_Article' ) ) {
 					'name' => $this->get_site_name(),
 				]
 			];
+
+			// Add featured image if it exists
+			$image_id = get_post_thumbnail_id( $post->ID );
+			if ( $image_id ) {
+				$image_url = wp_get_attachment_image_url( $image_id, 'full' );
+				if ( $image_url ) {
+					$schema['image'] = [
+						'@type' => 'ImageObject',
+						'url' => $image_url
+					];
+				}
+			}
+
+			return $schema;
 		}
 	}
 
