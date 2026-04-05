@@ -684,8 +684,25 @@ function getChartConfig(type, data, options = {}) {
                         if (response.success) {
                             showNotification('WooCommerce settings saved successfully!', 'success');
                             
-                            // Update status indicators
-                            updateWooCommerceStatus();
+                            // Update all form fields with the saved values
+                            if (response.data && response.data.settings) {
+                                const settings = response.data.settings;
+                                
+                                // Update shipping settings fields
+                                $('#shipping_rate').val(settings.shippingRate || '');
+                                $('#shipping_currency').val(settings.shippingCurrency || '');
+                                $('#return_days').val(settings.returnDays || '');
+                                $('#return_policy_category').val(settings.returnPolicyCategory || '');
+                                
+                                // Update product fields
+                                $('#default_brand').val(settings.defaultBrand || '');
+                                $('#gtin_field').val(settings.gtinField || '_gtin');
+                                $('#mpn_field').val(settings.mpnField || '_mpn');
+                                $('#brand_field').val(settings.brandField || '_brand');
+                                
+                                // Update status indicators
+                                updateWooCommerceStatus();
+                            }
                             
                             // Reset button
                             $submitBtn.prop('disabled', false).val('Save Settings');
@@ -1218,14 +1235,21 @@ function getChartConfig(type, data, options = {}) {
             
             if (isValid) {
                 // Show loading state
-                $submitBtn.prop('disabled', true).val('Saving...');
+                $submitBtn.prop('disabled', true).val('saving..');
                 
                 // Submit the form
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
                     data: $form.serialize() + '&action=giga_sp_save_settings',
+                    beforeSend: function() {
+                        // Show saving indicator
+                        showNotification('Saving settings...', 'info', 0);
+                    },
                     success: function(response) {
+                        // Hide saving notification
+                        $('.giga-notification').fadeOut(300);
+                        
                         if (response.success) {
                             showNotification('Settings saved successfully!', 'success');
                             
@@ -1240,6 +1264,8 @@ function getChartConfig(type, data, options = {}) {
                         }
                     },
                     error: function() {
+                        // Hide saving notification
+                        $('.giga-notification').fadeOut(300);
                         showNotification('Error saving settings. Please try again.', 'error');
                         $submitBtn.prop('disabled', false).val(originalText);
                     }

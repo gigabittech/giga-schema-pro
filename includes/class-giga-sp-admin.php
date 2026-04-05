@@ -23,6 +23,8 @@ if (!class_exists('Giga_SP_Admin')) {
 			add_action('wp_ajax_giga_sp_save_schema_selection', [$this, 'ajax_save_schema_selection']);
 			add_action('wp_ajax_giga_sp_get_schema_config', [$this, 'ajax_get_schema_config']);
 			add_action('wp_ajax_giga_sp_save_schema_config', [$this, 'ajax_save_schema_config']);
+			add_action('wp_ajax_giga_sp_save_settings', [$this, 'ajax_save_settings']);
+			add_action('wp_ajax_giga_sp_save_woo_settings', [$this, 'ajax_save_woo_settings']);
 		}
 
 		/**
@@ -636,6 +638,151 @@ if (!class_exists('Giga_SP_Admin')) {
 			);
 
 			wp_send_json_success(['enabled' => $new_state]);
+		}
+
+		/**
+			* AJAX: save organization settings.
+			*
+			* @since 1.0.0
+			*/
+		public function ajax_save_settings()
+		{
+			check_ajax_referer('giga_sp_settings', 'nonce');
+			if (!current_user_can('manage_options')) {
+				wp_send_json_error(['message' => __('Permission denied.', 'giga-schema-pro')]);
+			}
+
+			$settings = [
+				'organization_name' => isset($_POST['organization_name']) ? sanitize_text_field($_POST['organization_name']) : '',
+				'organization_logo' => isset($_POST['organization_logo']) ? esc_url_raw($_POST['organization_logo']) : '',
+				'organization_url' => isset($_POST['organization_url']) ? esc_url_raw($_POST['organization_url']) : '',
+				'organization_description' => isset($_POST['organization_description']) ? sanitize_textarea_field($_POST['organization_description']) : '',
+				'social_facebook' => isset($_POST['social_facebook']) ? esc_url_raw($_POST['social_facebook']) : '',
+				'social_twitter' => isset($_POST['social_twitter']) ? esc_url_raw($_POST['social_twitter']) : '',
+				'social_linkedin' => isset($_POST['social_linkedin']) ? esc_url_raw($_POST['social_linkedin']) : '',
+				'social_instagram' => isset($_POST['social_instagram']) ? esc_url_raw($_POST['social_instagram']) : '',
+			];
+
+			// Validate required fields
+			if (empty($settings['organization_name'])) {
+				wp_send_json_error(['message' => __('Organization name is required.', 'giga-schema-pro')]);
+			}
+
+			if (empty($settings['organization_url'])) {
+				wp_send_json_error(['message' => __('Organization URL is required.', 'giga-schema-pro')]);
+			}
+
+			if (empty($settings['organization_description'])) {
+				wp_send_json_error(['message' => __('Organization description is required.', 'giga-schema-pro')]);
+			}
+
+			// Validate URLs
+			if (!empty($settings['organization_logo']) && !filter_var($settings['organization_logo'], FILTER_VALIDATE_URL)) {
+				wp_send_json_error(['message' => __('Invalid organization logo URL.', 'giga-schema-pro')]);
+			}
+
+			if (!empty($settings['social_facebook']) && !filter_var($settings['social_facebook'], FILTER_VALIDATE_URL)) {
+				wp_send_json_error(['message' => __('Invalid Facebook URL.', 'giga-schema-pro')]);
+			}
+
+			if (!empty($settings['social_twitter']) && !filter_var($settings['social_twitter'], FILTER_VALIDATE_URL)) {
+				wp_send_json_error(['message' => __('Invalid Twitter URL.', 'giga-schema-pro')]);
+			}
+
+			if (!empty($settings['social_linkedin']) && !filter_var($settings['social_linkedin'], FILTER_VALIDATE_URL)) {
+				wp_send_json_error(['message' => __('Invalid LinkedIn URL.', 'giga-schema-pro')]);
+			}
+
+			if (!empty($settings['social_instagram']) && !filter_var($settings['social_instagram'], FILTER_VALIDATE_URL)) {
+				wp_send_json_error(['message' => __('Invalid Instagram URL.', 'giga-schema-pro')]);
+			}
+
+			update_option('giga_sp_settings', $settings);
+			self::log_activity(
+				__('Organization settings updated', 'giga-schema-pro'),
+				'dashicons-admin-settings',
+				'giga-sp-pass',
+				__('Saved', 'giga-schema-pro')
+			);
+
+			wp_send_json_success([
+				'message' => __('Settings saved successfully.', 'giga-schema-pro'),
+				'settings' => $settings
+			]);
+		}
+
+		/**
+			* AJAX: save WooCommerce settings.
+			*
+			* @since 1.0.0
+			*/
+		public function ajax_save_woo_settings()
+		{
+			check_ajax_referer('giga_sp_woo_settings', 'nonce');
+			if (!current_user_can('manage_options')) {
+				wp_send_json_error(['message' => __('Permission denied.', 'giga-schema-pro')]);
+			}
+
+			// Get existing settings to avoid data loss when saving from separate forms/tabs
+			$settings = get_option('giga_sp_woocommerce_settings', []);
+			
+			// Map POST fields to settings keys
+			$field_map = [
+				'shipping_rate'          => 'shippingRate',
+				'shipping_currency'      => 'shippingCurrency',
+				'return_days'            => 'returnDays',
+				'return_policy_category' => 'returnPolicyCategory',
+				'default_brand'          => 'defaultBrand',
+				'gtin_field'             => 'gtinField',
+				'mpn_field'              => 'mpnField',
+				'brand_field'            => 'brandField',
+			];
+
+			foreach ($field_map as $post_key => $settings_key) {
+				if (isset($_POST[$post_key])) {
+					$value = wp_unslash($_POST[$post_key]);
+					if ($settings_key === 'returnDays') {
+						$settings[$settings_key] = intval($value);
+					} else {
+						$settings[$settings_key] = sanitize_text_field($value);
+					}
+				}
+			}
+
+			// Validate shipping rate if it was updated
+			if (isset($_POST['shipping_rate']) && !empty($settings['shippingRate'])) {
+				$rate = floatval($settings['shippingRate']);
+				if ($rate < 0) {
+					wp_send_json_error(['message' => __('Shipping rate must be a positive number.', 'giga-schema-pro')]);
+				}
+			}
+
+			// Validate return days if it was updated
+			if (isset($_POST['return_days']) && $settings['returnDays'] < 0) {
+				wp_send_json_error(['message' => __('Return days must be a positive number.', 'giga-schema-pro')]);
+			}
+
+			// Validate currency code if it was updated
+			if (isset($_POST['shipping_currency']) && !empty($settings['shippingCurrency'])) {
+				$currency = strtoupper($settings['shippingCurrency']);
+				if (!preg_match('/^[A-Z]{3}$/', $currency)) {
+					wp_send_json_error(['message' => __('Currency code must be 3 letters (e.g., USD, EUR).', 'giga-schema-pro')]);
+				}
+				$settings['shippingCurrency'] = $currency;
+			}
+
+			update_option('giga_sp_woocommerce_settings', $settings);
+			self::log_activity(
+				__('WooCommerce settings updated', 'giga-schema-pro'),
+				'dashicons-cart',
+				'giga-sp-pass',
+				__('Saved', 'giga-schema-pro')
+			);
+
+			wp_send_json_success([
+				'message' => __('WooCommerce settings saved successfully.', 'giga-schema-pro'),
+				'settings' => $settings
+			]);
 		}
 
 		/**
@@ -1594,16 +1741,30 @@ if (!class_exists('Giga_SP_Admin')) {
 
 			// Save settings if form submitted
 			if (isset($_POST['giga_sp_woo_save']) && check_admin_referer('giga_sp_woo_settings')) {
-				$settings = [
-					'shippingRate' => isset($_POST['shipping_rate']) ? sanitize_text_field($_POST['shipping_rate']) : '',
-					'shippingCurrency' => isset($_POST['shipping_currency']) ? sanitize_text_field($_POST['shipping_currency']) : '',
-					'returnDays' => isset($_POST['return_days']) ? intval($_POST['return_days']) : 30,
-					'returnPolicyCategory' => isset($_POST['return_policy_category']) ? sanitize_text_field($_POST['return_policy_category']) : 'https://schema.org/MerchantReturnFiniteReturnWindow',
-					'defaultBrand' => isset($_POST['default_brand']) ? sanitize_text_field($_POST['default_brand']) : '',
-					'gtinField' => isset($_POST['gtin_field']) ? sanitize_text_field($_POST['gtin_field']) : '_gtin',
-					'mpnField' => isset($_POST['mpn_field']) ? sanitize_text_field($_POST['mpn_field']) : '_mpn',
-					'brandField' => isset($_POST['brand_field']) ? sanitize_text_field($_POST['brand_field']) : '_brand',
+				$settings = get_option('giga_sp_woocommerce_settings', []);
+				
+				$field_map = [
+					'shipping_rate'          => 'shippingRate',
+					'shipping_currency'      => 'shippingCurrency',
+					'return_days'            => 'returnDays',
+					'return_policy_category' => 'returnPolicyCategory',
+					'default_brand'          => 'defaultBrand',
+					'gtin_field'             => 'gtinField',
+					'mpn_field'              => 'mpnField',
+					'brand_field'            => 'brandField',
 				];
+
+				foreach ($field_map as $post_key => $settings_key) {
+					if (isset($_POST[$post_key])) {
+						$value = wp_unslash($_POST[$post_key]);
+						if ($settings_key === 'returnDays') {
+							$settings[$settings_key] = intval($value);
+						} else {
+							$settings[$settings_key] = sanitize_text_field($value);
+						}
+					}
+				}
+
 				update_option('giga_sp_woocommerce_settings', $settings);
 				self::log_activity(
 					__('WooCommerce schema settings updated', 'giga-schema-pro'),
@@ -1718,17 +1879,15 @@ if (!class_exists('Giga_SP_Admin')) {
 							<span class="dashicons dashicons-edit"></span>
 							<?php esc_html_e('Product Fields', 'giga-schema-pro'); ?>
 						</a>
-						<a href="#advanced-settings" class="giga-sp-tab" onclick="return false;">
-							<span class="dashicons dashicons-cog"></span>
-							<?php esc_html_e('Advanced', 'giga-schema-pro'); ?>
-						</a>
+					
 					</div>
 
-					<!-- Shipping & Returns Settings -->
-					<div id="shipping-settings" class="giga-panel">
-						<form method="post" action="" class="giga-settings-form">
-							<?php wp_nonce_field('giga_sp_woo_settings'); ?>
+					<!-- WooCommerce Settings Form -->
+					<form method="post" action="" class="giga-settings-form">
+						<?php wp_nonce_field('giga_sp_woo_settings'); ?>
 
+						<!-- Shipping & Returns Settings -->
+						<div id="shipping-settings" class="giga-panel">
 							<div class="giga-settings-grid">
 								<div class="giga-settings-column">
 									<div class="giga-form-group">
@@ -1845,14 +2004,10 @@ if (!class_exists('Giga_SP_Admin')) {
 								<?php submit_button(__('Save Settings', 'giga-schema-pro'), 'primary', 'giga_sp_woo_save'); ?>
 
 							</div>
-						</form>
-					</div>
+						</div>
 
-					<!-- Product Fields Settings -->
-					<div id="product-fields" class="giga-panel" style="display: none;">
-						<form method="post" action="" class="giga-settings-form">
-							<?php wp_nonce_field('giga_sp_woo_settings'); ?>
-
+						<!-- Product Fields Settings -->
+						<div id="product-fields" class="giga-panel" style="display: none;">
 							<div class="giga-settings-grid">
 								<div class="giga-settings-column">
 									<div class="giga-form-group">
@@ -1955,14 +2110,10 @@ if (!class_exists('Giga_SP_Admin')) {
 							<div class="giga-form-actions">
 								<?php submit_button(__('Save Settings', 'giga-schema-pro'), 'primary', 'giga_sp_woo_save'); ?>
 							</div>
-						</form>
-					</div>
+						</div>
 
-					<!-- Advanced Settings -->
-					<div id="advanced-settings" class="giga-panel" style="display: none;">
-						<form method="post" action="" class="giga-settings-form">
-							<?php wp_nonce_field('giga_sp_woo_settings'); ?>
-
+						<!-- Advanced Settings -->
+						<div id="advanced-settings" class="giga-panel" style="display: none;">
 							<div class="giga-settings-grid">
 								<div class="giga-settings-column">
 									<div class="giga-advanced-section">
@@ -2069,8 +2220,8 @@ if (!class_exists('Giga_SP_Admin')) {
 							<div class="giga-form-actions">
 								<?php submit_button(__('Save Settings', 'giga-schema-pro'), 'primary', 'giga_sp_woo_save'); ?>
 							</div>
-						</form>
-					</div>
+						</div>
+					</form>
 
 				</div>
 			</div>

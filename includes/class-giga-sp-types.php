@@ -15,7 +15,7 @@ if ( ! class_exists( 'Giga_SP_Types' ) ) {
 					'Review', 'AggregateRating', 'Offer', 'Event', 'Course', 
 					'Recipe', 'VideoObject', 'SoftwareApplication', 'Book', 'JobPosting', 
 					'Service', 'MedicalCondition', 'RealEstateListing', 'CollectionPage', 
-					'ItemList', 'SpeakableSpecification', 'Custom'
+					'ItemList', 'SpeakableSpecification', 'Custom', 
 				]
 			];
 		}
